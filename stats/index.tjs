@@ -1,3 +1,5 @@
+const STATISTICS = constIfUndefined(STATISTICS, "");
+
 const isWindows RegExp = new RegExp('Windows');
 const isAndroid RegExp = new RegExp('Android');
 const isLinux RegExp = new RegExp('Linux');
@@ -145,24 +147,24 @@ function preparePayload() Object {
   return obj;
 }
 
-function sendAnalytics() {
+function sendStats() {
   if (!pageHidden) {
-    window.navigator.sendBeacon(ANALYTICS, JSON.stringify(preparePayload()));
+    window.navigator.sendBeacon(STATISTICS, JSON.stringify(preparePayload()));
     pageHidden = true;
   }
 }
 
-function startAnalytics() {
-  if (ANALYTICS != "") {
+function startStats() {
+  if (STATISTICS != "") {
     window.addEventListener('pagehide', function(_) {
-      sendAnalytics();
+      sendStats();
       hideTriggered = true;
     });
 
     document.addEventListener('visibilitychange', function(_) {
       s := document.visibilityState;
       if (s == 'hidden') {
-        sendAnalytics();
+        sendStats();
         hideTriggered = true;
       } else if (s == 'visible') {
         // reset the pageLoadStart
@@ -173,4 +175,4 @@ function startAnalytics() {
   }
 }
 
-startAnalytics();
+startStats();

@@ -5,10 +5,10 @@
     "ux": "./ux/index.thtml"
   },
   "scriptModules": {
-    "analytics": "./analytics/index.tjs",
     "easing": "./easing/index.tjs",
     "linalg": "./linalg/index.tjs",
     "search": "./search/index.tjs",
+    "stats": "./stats/index.tjs",
     "ux": "./ux/index.tjs"
   },
   "shaderModules": {
