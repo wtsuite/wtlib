@@ -1,4 +1,4 @@
-const STATISTICS = constIfUndefined(STATISTICS, "");
+constIfUndefined(STATISTICS, "");
 
 const isWindows RegExp = new RegExp('Windows');
 const isAndroid RegExp = new RegExp('Android');
