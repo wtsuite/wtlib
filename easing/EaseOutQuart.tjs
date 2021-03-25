@@ -1,0 +1,9 @@
+import {Direction} from "Direction.tjs";
+import {EaseQuart} from "EaseQuart.tjs";
+
+
+export class EaseOutQuart extends EaseQuart {
+  constructor(duration Number) {
+    super(duration, Direction.OUT);
+  }
+}

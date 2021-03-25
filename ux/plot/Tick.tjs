@@ -1,0 +1,63 @@
+function smartRound(deltaPref Number) Number {
+  deltaBase := Math.pow(10.0, Math.floor(Math.log10(deltaPref)));
+
+  deltaRelRound := Math.round(deltaPref/deltaBase);
+  deltaRel := [1, 2, 2, 5, 5, 5, 5, 10, 10, 10][deltaRelRound - 1];
+
+  return deltaBase*deltaRel;
+}
+
+export class Tick {
+  _value Number;
+  _isMinor Boolean;
+
+  constructor(value Number, isMinor Boolean = false) {
+    this._value = value;
+    this._isMinor = isMinor;
+  }
+
+  get value() Number {
+    return this._value;
+  }
+
+  get isMinor() Boolean {
+    return this._isMinor;
+  }
+
+  get isMajor() Boolean {
+    return !this._isMinor;
+  }
+
+  static suggestTicks(start Number, stop Number, width Number, spacing Number) Array<Tick> {
+    let ticks Array<Tick> = new Array();
+
+    delta := smartRound((stop - start)/(width/spacing));
+
+    minTickI := Math.floor(start/delta);
+    maxTickI := Math.ceil(stop/delta);
+
+    while (start < minTickI*delta) {
+      minTickI -= 1;
+    }
+
+    while (stop > maxTickI*delta) {
+      maxTickI += 1;
+    }
+
+    for (i := minTickI; i <= maxTickI; i++) {
+      v := i*delta;
+      if (v >= start && v <= stop) {
+        ticks.push(new Tick(v));
+      }
+
+      if (i < maxTickI) {
+        vHalf := (i+0.5)*delta;
+        if (vHalf >= start && vHalf <= stop) {
+          ticks.push(new Tick(vHalf, true));
+        }
+      }
+    }
+
+    return ticks;
+  }
+}

@@ -1,0 +1,10 @@
+import {AbstractEasing} from "AbstractEasing.tjs";
+
+
+export class EaseElastic extends AbstractEasing {
+  mapInternal(x Number) Number {
+    const c = (2.0 * Math.PI)/3.0;
+
+    return -Math.pow(2.0, 10.0*x - 10.0)*Math.sin((x*10.0 - 10.75)*c);
+  }
+}

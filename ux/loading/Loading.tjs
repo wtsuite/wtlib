@@ -1,0 +1,48 @@
+// delay in ms
+const DELAY Int = 100;
+
+class Loading {
+  _showPending Boolean;
+  _hidePending Boolean;
+
+  constructor() {
+    this._showPending = false;
+    this._hidePending = false;
+  }
+
+  private get element() HTMLElement {
+    elem := document.getElementById("loading");
+
+    if (elem == null) {
+      throw new Error("#loading not found");
+    }
+
+    return elem;
+  }
+
+  show() {
+    this._showPending = true;
+    this._hidePending = false;
+
+    setTimeout(() => {
+      if (!this._hidePending) {
+        this.element.setAttribute("show", "");
+      }
+
+      this._showPending = false;
+      this._hidePending = false;
+    }, DELAY);
+  }
+
+  hide() {
+    if (this._showPending) {
+      this._hidePending = true;
+    } else {
+      this.element.removeAttribute("show");
+      this._hidePending = false;
+    }
+  }
+}
+
+
+export var loading Loading = new Loading();

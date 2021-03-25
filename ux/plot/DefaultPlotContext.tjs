@@ -1,0 +1,150 @@
+import {PlotContext} from "PlotContext.tjs";
+
+
+// PlotContext based on CanvasRenderingContext2D
+export class DefaultPlotContext implements PlotContext {
+  _canvas HTMLCanvasElement;
+  _ctx CanvasRenderingContext2D;
+  _pixelRatio Number;
+  _clientTop Number;
+  _clientLeft Number;
+
+  constructor(canvas HTMLCanvasElement) {
+    this._canvas = canvas;
+    this._pixelRatio = 1.0;
+    this._ctx = canvas.getContext("2d");
+
+    this._clientTop = 0.0; //
+    this._clientLeft = 0.0;
+
+    this.syncClientPos();
+
+    window.addEventListener("resize", (_) => {
+      this.syncClientPos();
+    });
+  }
+
+  private syncClientPos() {
+    rect := this._canvas.getBoundingClientRect();
+    this._clientTop = rect.top;
+    this._clientLeft = rect.left;
+  }
+
+  set pixelRatio(pr Number) {
+    //this._pixelRatio = pr;
+  }
+
+  get pixelRatio() Number {
+    return this._pixelRatio;
+  }
+
+  set fillStyle(color String) {
+    this._ctx.fillStyle = color;
+  }
+
+  get fillStyle() String {
+    return this._ctx.fillStyle;
+  }
+
+  clear() {
+    this._ctx.clearRect(0.0, 0.0, this._canvas.width, this._canvas.height);
+  }
+
+  clearRect(x0 Number, y0 Number, width Number, height Number) {
+    this._ctx.clearRect(x0, y0, width, height);
+  }
+
+  xDist(dx Number) Number {
+    return dx;
+  }
+
+  xPos(x Number) Number {
+    return Math.round(x) + (1.0 - this._clientLeft%1.0);
+  }
+
+  yDist(dy Number) Number {
+    return dy;
+  }
+
+  yPos(y Number) Number {
+    return Math.round(y) + (1.0 - this._clientTop%1.0);
+  }
+
+  beginLine(width Number, color String) {
+    this._ctx.lineWidth = width;
+    this._ctx.strokeStyle = color;
+    this._ctx.beginPath();
+  }
+
+  moveTo(x Number, y Number) {
+    this._ctx.moveTo(x, y);
+  }
+
+  lineTo(x Number, y Number) {
+    this._ctx.lineTo(x, y);
+  }
+
+  closeLine() {
+    this._ctx.closePath();
+  }
+
+  endLine() {
+    this._ctx.stroke();
+  }
+
+  set font(f String) {
+    this._ctx.font = f;
+  }
+
+  measureText(txt String) Number {
+    return this._ctx.measureText(txt).width;
+  }
+
+  label(txt String, x_ Number, y_ Number, anchor String, angle Number = 0.0) {
+    x := x_;
+    y := y_;
+
+    if (angle != 0.0) {
+      this._ctx.translate(x_, y_);
+      this._ctx.rotate(angle);
+      x = 0.0;
+      y = 0.0;
+    }
+
+    switch (anchor[0]) {
+      case "l":
+        this._ctx.textAlign = "start";
+        break;
+      case "c":
+        this._ctx.textAlign = "center";
+        break;
+      case "r":
+        this._ctx.textAlign = "end";
+        break;
+      default:
+        throw new Error("unhandled x anchor");
+    }
+
+    switch (anchor[1]) {
+      case "t":
+        this._ctx.textBaseline = "top";
+        break;
+      case "c":
+        this._ctx.textBaseline = "middle";
+        break;
+      case "b":
+        this._ctx.textBaseline = "bottom";
+        break;
+      default:
+        throw new Error("unhandled y anchor");
+    }
+
+    this._ctx.fillText(txt, x, y);
+
+    if (angle != 0.0) {
+      this._ctx.rotate(-angle);
+      this._ctx.translate(-x_, -y_);
+    }
+  }
+
+}

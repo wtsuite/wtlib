@@ -1,0 +1,13 @@
+permissive
+parameters(extension)
+
+import {iconfactory as factory}($extension) from "./factory.thtml"
+
+
+export function bgImageURI(icon, height, color) {
+  svg-uri(factory, {
+    icon: $icon, 
+    height: $height, 
+    style: ifelse(iscolor($color), {fill: $color}, $color), 
+  })
+}

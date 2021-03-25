@@ -1,0 +1,2 @@
+export template icon extends dummy super()
+  path("M19,12L12,22L5,12L12,2")

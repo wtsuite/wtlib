@@ -1,0 +1,9 @@
+import {Direction} from "Direction.tjs";
+import {EaseSine} from "EaseSine.tjs";
+
+
+export class EaseInOutSine extends EaseSine {
+  constructor(duration Number) {
+    super(duration, Direction.IN_OUT);
+  }
+}

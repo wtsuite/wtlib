@@ -1,0 +1,10 @@
+import {AbstractEasing} from "AbstractEasing.tjs";
+
+
+export class EaseBack extends AbstractEasing {
+  mapInternal(x Number) Number {
+    const c2 = 1.70158;
+    const c3 = c2 + 1.0;
+    return c3*x*x*x - c2*x*x;
+  }
+}

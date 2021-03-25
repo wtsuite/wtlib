@@ -1,0 +1,656 @@
+import {PlotContext} from "PlotContext.tjs";
+import {DefaultPlotContext} from "DefaultPlotContext.tjs";
+import {Collection} from "Collection.tjs";
+import {Tick} from "Tick.tjs";
+
+
+// this class takes care of ticks, gridlines and labels for cartesian axes
+// the specifics of 
+export class Plot {
+  _canvas HTMLCanvasElement;
+  _ctx PlotContext;
+
+  // style of the plot
+  _leftMargin Number; // in px
+  _rightMargin Number; // in px
+  _bottomMargin Number; // in px
+  _topMargin Number; // in px
+  _leftUserMargin Number; // in px
+  _rightUserMargin Number; // in px
+  _bottomUserMargin Number; // in px
+
+  _xTickFormat function<Number, String>;
+  _yTickFormat function<Number, String>;
+  _y2TickFormat function<Number, String>;
+  _boxStrokeWidth Number; // in px
+  _boxColor String;
+  _majorStrokeWidth Number; // in px
+  _majorColor String;
+  _minorStrokeWidth Number; // in px
+  _minorColor String;
+  _fontSize Int;
+  _fontFamily String;
+  _fontWeight String;
+  _gridSpacing Number; // in px
+  _tickLabelOffset Number; // in px
+  _labelPadding Number; // in px
+  _xLabelAngle Number; // in radians, only used if there isn't enough space
+
+  // state of the plot
+  _xLabel String;
+  _yLabel String;
+  _y2Label String;
+  _xLabelColor String;
+  _yLabelColor String;
+  _y2LabelColor String;
+  _xUserLim Tuple<Number, Number>; // null if auto
+  _yUserLim Tuple<Number, Number>; // null if auto
+  _y2UserLim Tuple<Number, Number>; // null if auto
+  _xLim Tuple<Number, Number>;
+  _yLim Tuple<Number, Number>; 
+  _y2Lim Tuple<Number, Number>;
+  _xTicks Array<Tick>;
+  _yTicks Array<Tick>;
+
+  // collections represent the serie etc.
+  _collections Array<Collection>;
+  _y2Collections Array<Collection>;
+
+  constructor(id String, ctx PlotContext = null) {
+    this._canvas = cast(document.getElementById(id), HTMLCanvasElement);
+    this._ctx = ctx == null ? new DefaultPlotContext(this._canvas) : ctx;
+    this._ctx.pixelRatio = 2.0;
+
+    this._leftMargin = null;
+    this._rightMargin = null;
+    this._bottomMargin = null;
+    this._topMargin = 10.0;
+    this._leftUserMargin = null;
+    this._rightUserMargin = null;
+    this._bottomUserMargin = null;
+
+    this._xTickFormat = function (v Number) String {return v.toString();};
+    this._yTickFormat = this._xTickFormat;
+    this._y2TickFormat = this._xTickFormat;
+    this._boxStrokeWidth = 2.0;
+    this._boxColor = "#494949";
+    this._majorStrokeWidth = 1.0;
+    this._majorColor = "#808080";
+    this._minorStrokeWidth = 1.0;
+    this._minorColor = "#ccc";
+    this._fontSize = 16;
+    this._fontFamily = "mono";
+    this._fontWeight = "lighter";
+    this._gridSpacing = 100.0;
+    this._tickLabelOffset = 4.0;
+    this._labelPadding = 2.0;
+    this._xLabelAngle = Math.PI/6.0;
+
+    this._xLabel = "x";
+    this._yLabel = "y";
+    this._y2Label = "y2";
+    this._xLabelColor = "";
+    this._yLabelColor = "";
+    this._y2LabelColor = "";
+    this._xUserLim = null;
+    this._yUserLim = null;
+    this._y2UserLim = null;
+    this._xLim = null;
+    this._yLim = null;
+    this._y2Lim = null;
+    this._xTicks = [];
+    this._yTicks = [];
+
+    this._collections = [];
+    this._y2Collections = [];
+
+    window.addEventListener("resize", (_) => {
+      this.draw();
+    });
+  }
+
+  // in px
+  set leftMargin(dx Number) {
+    this._leftUserMargin = dx;
+  }
+  
+  set bottomMargin(dy Number) {
+    this._bottomUserMargin = dy;
+  }
+  
+  set rightMargin(dx Number) {
+    this._rightUserMargin = dx;
+  }
+  
+  set topMargin(dy Number) {
+    this._topMargin = dy;
+  }
+
+  get boxWidth() Number {
+    return this._canvas.width/this._ctx.pixelRatio - this._leftMargin - this._rightMargin;
+  }
+
+  get boxHeight() Number {
+    return this._canvas.height/this._ctx.pixelRatio - this._bottomMargin - this._topMargin;
+  }
+
+  set xLabel(txt String) {
+    this._xLabel = txt;
+  }
+
+  set yLabel(txt String) {
+    this._yLabel = txt;
+  }
+
+  set y2Label(txt String) {
+    this._y2Label = txt;
+  }
+
+  set xLabelColor(color String) {
+    this._xLabelColor = color;
+  }
+
+  set yLabelColor(color String) {
+    this._yLabelColor = color;
+  }
+
+  set y2LabelColor(color String) {
+    this._y2LabelColor = color;
+  }
+
+  set xTickFormat(fn function<Number, String>) {
+    this._xTickFormat = fn;
+  }
+
+  set yTickFormat(fn function<Number, String>) {
+    this._yTickFormat = fn;
+  }
+
+  set y2TickFormat(fn function<Number, String>) {
+    this._y2TickFormat = fn;
+  }
+
+  get xLim() Tuple<Number, Number> {
+    return this._xLim == null ? this._xUserLim : this._xLim;
+  }
+
+  get yLim() Tuple<Number, Number> {
+    return this._yLim == null ? this._yUserLim : this._yLim;
+  }
+
+  set xLim(lim Tuple<Number, Number>) {
+    this._xUserLim = lim;
+  }
+
+  set yLim(lim Tuple<Number, Number>) {
+    this._yUserLim = lim;
+  }
+
+  add(c Collection) {
+    this._collections.push(c);
+  }
+
+  addY2(c Collection) {
+    this._y2Collections.push(c);
+  }
+
+  removeAll() {
+    this._collections = [];
+    this._y2Collections = [];
+  }
+
+  private syncResolution() Boolean {
+    rect := this._canvas.getBoundingClientRect();
+
+    if (rect.width != 0.0 && rect.height != 0.0) {
+      this._canvas.width = rect.width*this._ctx.pixelRatio;
+      this._canvas.height = rect.height*this._ctx.pixelRatio;
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  private syncFont() {
+    this._ctx.font = [this._fontWeight, (this._fontSize*this._ctx.pixelRatio).toString() + "px", this._fontFamily].join(" ");
+  }
+
+  private syncXLimits() {
+    if (this._collections.length + this._y2Collections.length == 0) {
+      this._xLim = new Tuple(0, 1);
+    } else {
+      if (this._xUserLim != null) {
+        this._xLim = this._xUserLim;
+      } else {
+        xMin := Number.MAX_VALUE;
+        xMax := -Number.MAX_VALUE;
+
+        for (let c of this._collections) {
+          xBounds := c.xBounds;
+
+          xMin = Math.min(xBounds[0], xMin);
+          xMax = Math.max(xBounds[1], xMax);
+        }
+
+        for (let c of this._y2Collections) {
+          xBounds := c.xBounds;
+
+          xMin = Math.min(xBounds[0], xMin);
+          xMax = Math.max(xBounds[1], xMax);
+        }
+
+        this._xLim = new Tuple(xMin, xMax);
+      }
+    }
+  }
+
+  private syncYLimits() {
+    if (this._collections.length == 0) {
+      this._yLim = new Tuple(0, 1);
+    } else {
+      if (this._yUserLim != null) {
+        this._yLim = this._yUserLim;
+      } else {
+        yMin := Number.MAX_VALUE;
+        yMax := -Number.MAX_VALUE;
+
+        for (let c of this._collections) {
+          yBounds := c.yBounds;
+
+          yMin = Math.min(yBounds[0], yMin);
+          yMax = Math.max(yBounds[1], yMax);
+        }
+
+        this._yLim = new Tuple(yMin, yMax);
+      }
+    }
+  }
+
+  private syncY2Limits() {
+    if (this._y2Collections.length == 0) {
+      this._y2Lim = null
+    } else {
+      if (this._y2UserLim != null) {
+        this._y2Lim = this._y2UserLim;
+      } else {
+        yMin := Number.MAX_VALUE;
+        yMax := -Number.MAX_VALUE;
+
+        for (let c of this._y2Collections) {
+          yBounds := c.yBounds;
+
+          yMin = Math.min(yBounds[0], yMin);
+          yMax = Math.max(yBounds[1], yMax);
+        }
+
+        this._y2Lim = new Tuple(yMin, yMax);
+      }
+    }
+  }
+
+  private syncLimits() {
+    this.syncXLimits();
+    this.syncYLimits();
+    this.syncY2Limits();
+  }
+
+  private syncTicks() {
+    this._xTicks = Tick.suggestTicks(this._xLim[0], this._xLim[1], this.boxWidth, this._gridSpacing);
+    this._yTicks = Tick.suggestTicks(this._yLim[0], this._yLim[1], this.boxHeight, this._gridSpacing);
+  }
+
+  private syncMargins() {
+    if (this._leftUserMargin != null) {
+      this._leftMargin = this._leftUserMargin;
+    } else {
+      m := this.maxYTickLabelWidth();
+
+      this._leftMargin = this._labelPadding + (this._yLabel != "" ? this._fontSize/(0.6) + this._labelPadding : 0.0) + m + this._tickLabelOffset;
+    }
+
+    if (this._rightUserMargin != null) {
+      this._rightMargin = this._rightUserMargin;
+    } else if (this._y2Lim != null) {
+      m := this.maxY2TickLabelWidth();
+
+      this._rightMargin = this._labelPadding + (this._y2Label != "" ? this._fontSize/(0.6) + this._labelPadding : 0.0) + m + this._tickLabelOffset;
+    } else {
+      this._rightMargin = this._boxStrokeWidth*0.5;
+    }
+
+    if (this._bottomUserMargin != null) {
+      this._bottomMargin = this._bottomUserMargin;
+    } else {
+      m := this.maxXTickLabelWidth();
+      h := this._fontSize/(0.6);
+      left := 0.5*m;
+      right := 0.5*m;
+      if (m > this._gridSpacing*0.8) {
+        h += Math.sin(this._xLabelAngle)*m;
+        left = Math.cos(this._xLabelAngle)*m;
+        right = 0;
+      }
+
+      this._bottomMargin = this._labelPadding + (this._xLabel != "" ? this._fontSize/(0.6) + this._labelPadding : 0.0) + h + this._tickLabelOffset;
+
+      if (this._leftUserMargin == null && left > this._leftMargin - this._labelPadding) {
+        this._leftMargin = left + this._labelPadding;
+      }
+
+      if (this._rightUserMargin == null && right > this._rightMargin - this._labelPadding) {
+        this._rightMargin = right + this._labelPadding;
+      }
+    }
+
+  }
+
+  private syncBounds() {
+    this.syncLimits();
+    this.syncFont();
+    this.syncMargins();
+    this.syncTicks();
+  }
+
+  private xPos(v Number) Number {
+    return this._ctx.xPos(this._leftMargin + (v - this._xLim[0])/(this._xLim[1] - this._xLim[0])*this.boxWidth);
+  }
+
+  private yPos(v Number) Number {
+    return this._ctx.yPos((this._yLim[1] - v)/(this._yLim[1] - this._yLim[0])*this.boxHeight + this._topMargin);
+  }
+
+  private y2Pos(v Number) Number {
+    return this.yPos(this._yLim[0] + (v - this._y2Lim[0])/(this._y2Lim[1] - this._y2Lim[0])*(this._yLim[1] - this._yLim[0]));
+  }
+
+  private get xStart() Number {
+    return this._ctx.xPos(this._leftMargin + 0.5*this._boxStrokeWidth);
+  }
+
+  private get xStop() Number {
+    return this._ctx.xPos(this._canvas.width/this._ctx.pixelRatio - 0.5*this._boxStrokeWidth - this._rightMargin);
+  }
+
+  private get yStart() Number {
+    return this._ctx.yPos(0.5*this._boxStrokeWidth + this._topMargin);
+  }
+
+  private get yStop() Number {
+    return this._ctx.yPos(this._canvas.height/this._ctx.pixelRatio - 0.5*this._boxStrokeWidth - this._bottomMargin);
+  }
+
+  private drawBox() {
+    xStart := this.xStart;
+    xStop := this.xStop;
+    yStart := this.yStart;
+    yStop := this.yStop;
+
+    this._ctx.beginLine(this._boxStrokeWidth, this._boxColor);
+    this._ctx.moveTo(xStart, yStart);
+    this._ctx.lineTo(xStop, yStart);
+    this._ctx.lineTo(xStop, yStop);
+    this._ctx.lineTo(xStart, yStop);
+    this._ctx.closeLine();
+    this._ctx.endLine();
+  }
+
+  private maxXTickLabelWidth() Number {
+    xMin := this._xLim[0];
+    xMax := this._xLim[1];
+    // assume font has been set right
+    m := 0.0;
+    for (i := 0; i <= 10; i++) {
+      v := (xMax - xMin)*i/10.0;
+      txt := this._xTickFormat(v);
+      w := this._ctx.measureText(txt); // should return value in px
+      m = Math.max(w, m);
+    }
+
+    return m;
+  }
+
+  private maxYTickLabelWidth() Number {
+    yMin := this._yLim[0];
+    yMax := this._yLim[1];
+    // assume font has been set right
+    // sample range instead of using actual ticks
+    m := 0.0;
+    for (i := 0; i <= 10; i++) {
+      v := (yMax - yMin)*i/10.0;
+      txt := this._yTickFormat(v);
+      w := this._ctx.measureText(txt); // should return value in px
+      m = Math.max(w, m);
+    }
+
+    return m;
+  }
+
+  private maxY2TickLabelWidth() Number {
+    yMin := this._y2Lim[0];
+    yMax := this._y2Lim[1];
+    // assume font has been set right
+    // sample range instead of using actual ticks
+    m := 0.0;
+    for (i := 0; i <= 10; i++) {
+      v := (yMax - yMin)*i/10.0;
+      txt := this._y2TickFormat(v);
+      w := this._ctx.measureText(txt); // should return value in px
+      m = Math.max(w, m);
+    }
+
+    return m;
+  }
+
+  private drawLabels() {
+    if (this._xLabel != null && this._xLabel != "") {
+      prevFillStyle := this._ctx.fillStyle;
+      if (this._xLabelColor != "") {
+        this._ctx.fillStyle = this._xLabelColor;
+      }
+
+      this._ctx.label(
+        this._xLabel,
+        this._ctx.xPos(this._leftMargin + 0.5*this.boxWidth),
+        this._ctx.yPos(this._canvas.height/this._ctx.pixelRatio - this._labelPadding),
+        "cb", 0.0);
+      
+      this._ctx.fillStyle = prevFillStyle;
+    }
+
+    if (this._yLabel != null && this._yLabel != "") {
+      prevFillStyle := this._ctx.fillStyle;
+      if (this._yLabelColor != "") {
+        this._ctx.fillStyle = this._yLabelColor;
+      }
+
+      this._ctx.label(
+        this._yLabel, 
+        this._ctx.xPos(this._labelPadding),
+        this._ctx.yPos(this._topMargin + 0.5*this.boxHeight),
+        "ct", -Math.PI*0.5);
+
+      this._ctx.fillStyle = prevFillStyle;
+    }
+
+    if (this._y2Label != null && this._y2Label != "" && this._y2Lim != null) {
+      prevFillStyle := this._ctx.fillStyle;
+      if (this._y2LabelColor != "") {
+        this._ctx.fillStyle = this._y2LabelColor;
+      }
+
+      this._ctx.label(
+        this._y2Label,
+        this._ctx.xPos(this._canvas.width - this._labelPadding),
+        this._ctx.yPos(this._topMargin + 0.5*this.boxHeight),
+        "cb", -Math.PI*0.5);
+
+      this._ctx.fillStyle = prevFillStyle;
+    }
+
+    xTickLabelAngle := 0.0;
+    xTickLabelAnchor := "ct";
+    xTickLabelWidth := this.maxXTickLabelWidth();
+    if (xTickLabelWidth > this._gridSpacing*0.8) {
+      xTickLabelAngle = -this._xLabelAngle;
+      xTickLabelAnchor = "rt";
+    }
+
+    xTickLabelYPos := this.yStop + this._tickLabelOffset;
+
+    for (let t of this._xTicks) {
+      if (t.isMajor) {
+        txt := this._xTickFormat(t.value);
+
+        if (txt != "") {
+          this._ctx.label(
+            txt,
+            this.xPos(t.value),
+            this._ctx.yPos(xTickLabelYPos),
+            xTickLabelAnchor, xTickLabelAngle);
+        }
+      }
+    }
+
+    yTickLabelXPos := this.xStart - this._tickLabelOffset;
+    for (let t of this._yTicks) {
+      if (t.isMajor) {
+        txt := this._yTickFormat(t.value);
+
+        if (txt != "") {
+          this._ctx.label(
+            txt,
+            this._ctx.xPos(yTickLabelXPos),
+            this.yPos(t.value),
+            "rc", 0.0);
+        }
+      }
+    }
+
+    if (this._y2Lim != null) {
+      y2TickLabelXPos := this.xStop + this._tickLabelOffset;
+
+      for (let t of this._yTicks) {
+        if (t.isMajor) {
+          v := this._y2Lim[0] + (t.value - this._yLim[0])/(this._yLim[1] - this._yLim[0])*(this._y2Lim[1] - this._y2Lim[0]);
+
+          txt := this._y2TickFormat(v);
+
+          if (txt != "") {
+            this._ctx.label(
+              txt,
+              this._ctx.xPos(y2TickLabelXPos),
+              this.yPos(t.value),
+              "lc", 0.0);
+          }
+        }
+      }
+    }
+  }
+
+  private drawGrid() {
+    xStart := this.xStart;
+    xStop := this.xStop;
+    yStart := this.yStart;
+    yStop := this.yStop;
+
+    this._ctx.beginLine(this._majorStrokeWidth, this._majorColor);
+
+    majorHint := this._majorStrokeWidth == 1.0 ? 0.5*this._majorStrokeWidth : 0.0;
+
+    for (let t of this._xTicks) {
+      if (t.isMajor) {
+        x := this.xPos(t.value) + majorHint;
+        this._ctx.moveTo(x, yStart);
+        this._ctx.lineTo(x, yStop);
+      }
+    }
+
+    for (let t of this._yTicks) {
+      if (t.isMajor) {
+        y := this.yPos(t.value) + majorHint;
+        this._ctx.moveTo(xStart, y);
+        this._ctx.lineTo(xStop, y);
+      }
+    }
+
+    this._ctx.endLine();
+
+    this._ctx.beginLine(this._minorStrokeWidth, this._minorColor);
+
+    minorHint := this._minorStrokeWidth == 1.0 ? 0.5*this._minorStrokeWidth : 0.0;
+
+    for (let t of this._xTicks) {
+      if (t.isMinor) {
+        x := this.xPos(t.value) + minorHint;
+        this._ctx.moveTo(x, yStart);
+        this._ctx.lineTo(x, yStop);
+      }
+    }
+
+    for (let t of this._yTicks) {
+      if (t.isMinor) {
+        y := this.yPos(t.value) + minorHint;
+        this._ctx.moveTo(xStart, y);
+        this._ctx.lineTo(xStop, y);
+      }
+    }
+
+    this._ctx.endLine();
+  }
+
+  private drawCollections() {
+    for (let c of this._collections) {
+      c.draw((x Number) Number => {
+        return this.xPos(x);
+      }, (y Number) Number => {
+        return this.yPos(y);
+      }, this._ctx);
+    }
+
+    for (let c of this._y2Collections) {
+      c.draw((x Number) Number => {
+        return this.xPos(x);
+      }, (y Number) Number => {
+        return this.y2Pos(y);
+      }, this._ctx);
+    }
+  }
+
+  draw() {
+    if (!this.syncResolution()) {
+      // try again later
+      setTimeout(() => {
+        this.draw();
+      }, 100);
+      return;
+    }
+
+    this.syncBounds();
+
+    this._ctx.clear();
+
+    this.drawGrid();
+
+    this.drawCollections();
+
+    this._ctx.clearRect(
+      0, 0,
+      this.xStart, this._canvas.height);
+
+    this._ctx.clearRect(
+      this._ctx.xPos(this.xStop), 0,
+      this._ctx.xDist(this.boxWidth), this._canvas.height);
+
+    this._ctx.clearRect(
+      0, this._ctx.yPos(this.yStop),
+      this._canvas.width, this._ctx.yDist(this.boxHeight));
+
+    this._ctx.clearRect(
+      0, 0,
+      this._canvas.width, this.yStart);
+
+    this.drawBox();
+
+    this.drawLabels();
+  }
+}

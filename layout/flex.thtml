@@ -1,0 +1,47 @@
+function selectHorStyle(x, y) {
+  {
+    flex-direction: row,
+    justify-content: {
+      l: flex-start, 
+      c: center,
+      r: flex-end,
+      s: space-between,
+    }[$x],
+    align-items: {
+      t: flex-start,
+      c: center,
+      b: flex-end,
+    }[$y]
+  }
+}
+
+function selectVerStyle(x, y) {
+  {
+    flex-direction: column,
+    justify-content: {
+      t: flex-start, 
+      c: center,
+      b: flex-end,
+      s: space-between,
+    }[$y],
+    align-items: {
+      l: flex-start,
+      c: center,
+      r: flex-end,
+    }[$x]
+  }
+}
+
+// align : hcc (example)
+export function flex(align) {
+  hvxy := list($align);
+  hv := $hvxy[0]; // 'h' or 'v'
+  x := $hvxy[1]; // 'l', 'c' or 'r'
+  y := $hvxy[2]; // 't', 'c' or 'b'
+
+  {display: flex} + ifelse(
+    $hv == "h", selectHorStyle($x, $y), 
+    $hv == "v", selectVerStyle($x, $y), 
+    error("expected h or v, got " + $hv),
+  )
+}

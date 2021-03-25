@@ -1,0 +1,6 @@
+import {EasePoly} from "EasePoly.tjs";
+
+
+export class EaseQuad extends EasePoly {
+  get p() Number {return 2.0}
+}

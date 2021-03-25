@@ -1,0 +1,68 @@
+export class Vec4 {
+  _x Number;
+  _y Number;
+  _z Number;
+  _w Number;
+
+  constructor(x Number, y Number, z Number, w Number) {
+    this._x = x;
+    this._y = y;
+    this._z = z;
+    this._w = w;
+  }
+
+  static fromArray(arr Array<Number>) Vec4 {
+    if (arr.length != 4) {
+      throw new Error("Error: expected 4 entries");
+    }
+
+    return new Vec4(arr[0], arr[1], arr[2], arr[3]);
+  }
+
+  static zero() Vec4 {
+    return new Vec4(0.0, 0.0, 0.0, 0.0);
+  }
+
+  copy() Vec4 {
+    return new Vec4(this._x, this._y, this._z, this._w);
+  }
+
+  get x() Number { return this._x; }
+  get y() Number { return this._y; }
+  get z() Number { return this._z; }
+  get w() Number { return this._w; }
+
+  set x(x Number) { this._x = x; }
+  set y(y Number) { this._y = y; }
+  set z(z Number) { this._z = z; }
+  set w(w Number) { this._w = w; }
+
+  dot(other Vec4) Number {
+    return 
+      this._x*other._x + 
+      this._y*other._y + 
+      this._z*other._z + 
+      this._w*other._w;
+  }
+
+  scale(s Number) {
+    this._x *= s;
+    this._y *= s;
+    this._z *= s;
+    this._w *= s;
+  }
+
+  normSq() Number {
+    return this.dot(this);
+  }
+
+  norm() Number {
+    return Math.sqrt(this.normSq());
+  }
+
+  normalize() Vec4 {
+    // returns a new Vec4
+    s := 1.0/this.norm();
+    return new Vec4(this._x*s, this._y*s, this._z*s, this._w*s);
+  }
+}

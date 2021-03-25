@@ -1,0 +1,101 @@
+export class StringSelect {
+  _collection HTMLSelectElement;
+  _onselect function<Int, void>;
+
+  constructor(id String) {
+    this._collection = cast(document.getElementById(id), HTMLSelectElement);
+    this._onselect = null;
+
+    this._collection.addEventListener("change", (_) => {
+      if (this._onselect != null) {
+        this._onselect(this._collection.selectedIndex);
+      }
+    });
+
+    if (this._collection.children.length == 0) {
+      this.disable();
+    }
+  }
+
+  disable() {
+    this._collection.setAttribute("disabled", "");
+  }
+
+  enable() {
+    this._collection.removeAttribute("disabled");
+  }
+
+  private clear() {
+    while (this._collection.firstChild != null) {
+      this._collection.removeChild(this._collection.firstChild);
+    }
+  }
+
+  set options(arr Array<String>) {
+    //  clear the previous
+    this.clear();
+
+    for (let opt of arr) {
+      option := document.createElement("option");
+      option.innerHTML = opt;
+      option.setAttribute("value", opt);
+
+      this._collection.appendChild(option);
+    }
+
+    this._collection.selectedIndex = -1;
+
+    if (arr.length == 0) {
+      this.disable();
+    } else {
+      this.enable();
+    }
+  }
+
+  get index() Int {
+    return this._collection.selectedIndex;
+  }
+
+  set index(i Int) {
+    this._collection.selectedIndex = i;
+  }
+
+  get value() String {
+    return this._collection.value;//children[this.index].innerHTML;
+  }
+
+  // only when there is an exact match
+  set value(s String) {
+    for (i := 0; i < this.length; i++) {
+      if (this._collection.children[i].getAttribute("value") == s) {
+        this.index = i;
+        return;
+      }
+    }
+  }
+
+  get length() Int {
+    return this._collection.children.length;
+  }
+
+  get options() Array<String> {
+    n := this.length;
+
+    let arr Array<String> = new Array(n);
+
+    for (i := 0; i < n; i++) {
+      item := this._collection.children[i];
+      arr[i] = item.getAttribute("value");
+    }
+
+    return arr;
+  }
+
+  set onselect(fn function<Int, void>) {
+    this._onselect = fn;
+  }
+
+  set error(s String) {
+    this._collection.setCustomValidity(s);
+  }
+}

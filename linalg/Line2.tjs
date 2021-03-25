@@ -1,0 +1,85 @@
+import {Vec2} from "Vec2.tjs";
+
+
+export class Line2 {
+  _v0 Vec2;
+  _v1 Vec2;
+  _l  Number;
+  _t  Vec2;
+
+  // t is tangential vector
+  constructor(v0 Vec2, v1 Vec2) {
+    this._v0 = v0;
+    this._v1 = v1;
+
+    d := this._v1.sub(this._v0);
+
+    this._l = d.norm();
+    this._t = new Vec2(d.x/this._l, d.y/this._l);
+  }
+  
+  get v0() Vec2 {
+    return this._v0;
+  }
+
+  get v1() Vec2 {
+    return this._v1;
+  }
+
+  get center() Vec2 {
+    return this._v0.add(this._v1).scale(0.5);
+  }
+
+  // returns [distance-to, distance-along]
+  distance2(v Vec2) Tuple<Number, Number> {
+    dx := v.x - this._v0.x;
+    dy := v.y - this._v0.y;
+
+    n := -this._t.y*dx + this._t.x*dy;
+    t := this._t.x*dx + this._t.y*dy;
+
+    return new Tuple(n, t);
+  }
+
+  // slightly faster calculations for distance-to only
+  distance(v Vec2) Number {
+    dx := v.x - this._v0.x;
+    dy := v.y - this._v0.y;
+
+    return -this._t.y*dx + this._t.x*dy;
+  }
+
+  project(v Vec2) Vec2 {
+    dx := v.x - this._v0.x;
+    dy := v.y - this._v0.y;
+
+    t := this._t.x*dx + this._t.y*dy;
+
+    return this._v0.add(this._t.scale(t));
+  }
+
+  get norm() Vec2 {
+    // pointing from v0 to v1
+    return this._t;
+  }
+
+  get length() Number {
+    return this._l;
+  }
+
+  reverse() {
+    v0 := this._v0;
+
+    this._v0 = this._v1;
+    this._v1 = v0;
+
+    this._t = new Vec2(-this._t.x, -this._t.y);
+  }
+
+  static fromInterp2(fa Number, va0 Vec2, va1 Vec2, fb Number, vb0 Vec2, vb1 Vec2) Line2 {
+    va := va0.scale(1.0-fa).add(va1.scale(fa));
+    vb := vb0.scale(1.0-fb).add(vb1.scale(fb));
+
+    return new Line2(va, vb);
+  }
+}

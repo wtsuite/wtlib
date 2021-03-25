@@ -1,0 +1,13 @@
+import {Direction} from "Direction.tjs";
+import {AbstractEasing} from "AbstractEasing.tjs";
+
+
+export class Linear extends AbstractEasing {
+  constructor(duration Number) {
+    super(duration, Direction.IN);
+  }
+
+  mapInternal(x Number) Number {
+    return x;
+  }
+}

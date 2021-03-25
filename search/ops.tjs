@@ -1,0 +1,91 @@
+export function sanitizeQuery(q_ String) Array<String> {
+  q := q_.replace(new RegExp("<[/]?[a-z]*[/]?>", "g"), "");
+  q = q.replace(new RegExp('&nbsp;', "g"), " ");
+  q = q.replace(new RegExp('[\\,;:\]', "g"), " ");
+
+  raw := q.split(" ");
+
+  fs := [];
+  for (let f_ of raw) {
+    f := f_.trim();
+    if (f.length > 1) {
+      unique := true;
+      for (let check of fs) {
+        if (check == f) {
+          unique = false;
+          break;
+        }
+      }
+
+      if (unique) {
+        fs.push(f);
+      }
+    }
+  }
+
+  return fs;
+}
+
+// highlight parts of txt with <b> tags
+export function highlightQuery(txt String, keys Array<String>) String {
+  txt = txt.replace(new RegExp('&nbsp;', "g"), "      ");
+
+  var rawRanges Array<Array<Int>> = [];
+  for (let key of keys) {
+    re := new RegExp(key, "gi"); // case insensitive match
+
+    while(true) {
+      match := re.exec(txt);
+
+      if (match == null) {
+        break;
+      }
+
+      start := match.index;
+      stop := start + match[0].length;
+
+      rawRanges.push([start, stop]);
+    }
+  }
+
+  n := rawRanges.length;
+  if (n == 0) {
+    return txt;
+  }
+
+  rawRanges.sort(function(a Array<Int>, b Array<Int>) Int {
+    return a[0]-b[0];
+  });
+
+  // merge overlapping ranges
+  let ranges Array<Array<Int>> = [];
+
+  start := rawRanges[0][0];
+  stop := rawRanges[0][1];
+  for (i := 1; i < n; i++) {
+    if (rawRanges[i][0] > rawRanges[i-1][1]) {
+      ranges.push([start, stop]);
+      start = rawRanges[i][0];
+      stop = rawRanges[i][1];
+    } else if (rawRanges[i][1] > stop) {
+      stop = rawRanges[i][1];
+    }
+  }
+
+  ranges.push([start, rawRanges[n-1][1]]);
+
+  let highlightedTxt Array<String> = [];
+
+  prev := 0;
+  for (i := 0; i < ranges.length; i++) {
+    highlightedTxt.push(txt.slice(prev, ranges[i][0]));
+    highlightedTxt.push("<b>" + txt.slice(ranges[i][0], ranges[i][1]) + "</b>");
+    prev = ranges[i][1];
+  }
+
+  if (prev < txt.length) {
+    highlightedTxt.push(txt.slice(prev));
+  }
+
+  return highlightedTxt.join("");
+}

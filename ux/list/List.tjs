@@ -1,0 +1,87 @@
+export class List {
+  _container HTMLElement;
+  _onselect function<Int, void>;
+
+  constructor(id String) {
+    this._container = document.getElementById(id);
+
+    this._container.addEventListener("click", (e Event) => {
+      for (i := 0; i < this._container.children.length; i++) {
+        child := this._container.children[i];
+        if (child == e.target || child == e.target.parentElement) {
+          this.select(i);
+          return;
+        }
+      }
+
+      //this.select(-1);
+    });
+
+    this._onselect = null;
+  }
+
+  private clear() {
+    while(this._container.firstChild != null) {
+      this._container.removeChild(this._container.firstChild);
+    }
+  }
+
+  set onselect(fn function<Int, void>) {
+    this._onselect = fn;
+  }
+
+  update(lst Array<String>) {
+    this.clear();
+
+    for (let item of lst) {
+      this.push(item);
+    }
+  }
+
+  push(item String) {
+    p := document.createElement("p");
+
+    p.innerHTML = item;
+
+    this._container.appendChild(p);
+  }
+
+  clearSelection() {
+    for (i := 0; i < this._container.children.length; i++) {
+      child := this._container.children[i];
+
+      child.removeAttribute("selected");
+    }
+  }
+
+  private select(i Int) {
+    this.index = i;
+
+    if (this._onselect != null) {
+      this._onselect(i);
+    }
+  }
+
+  set index(i Int) {
+    for (j := 0; j < this._container.children.length; j++) {
+      child := this._container.children[j];
+      if (i == j) {
+        child.setAttribute("selected", "");
+      } else {
+        child.removeAttribute("selected");
+      }
+    }
+  }
+
+  get index() Int {
+    for (i := 0; i < this._container.children.length; i++) {
+      child := this._container.children[i];
+
+      if (child.getAttribute("selected") != null) {
+        return i;
+      }
+    }
+
+    return -1;
+  }
+}

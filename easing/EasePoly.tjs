@@ -1,0 +1,10 @@
+import {AbstractEasing} from "AbstractEasing.tjs";
+
+
+abstract class EasePoly extends AbstractEasing {
+  abstract get p() Number;
+
+  mapInternal(x Number) Number {
+    return Math.pow(x, this.p);
+  }
+}

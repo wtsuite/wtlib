@@ -1,0 +1,21 @@
+export function grid(gutter, columns=12, nested=true) {
+  {
+    display: grid,
+    grid-column-gap: $gutter,
+    grid-template-columns: c := ifelse(islist($columns), $columns, list($columns, 1fr)),
+    "-ms-grid-columns": $c,
+    grid-auto-rows: min-content,
+    grid-row-gap: $gutter,
+    position: relative,
+
+    // emulate column-gap with margins
+    "@msie-only": {
+      margin-left: ifelse($nested, [0, "!important"], -0.5*$gutter),
+      margin-right: ifelse($nested, [0, "!important"], -0.5*$gutter),
+      "> *": {
+        margin-left: 0.5*$gutter,
+        margin-right: 0.5*$gutter,
+      },
+    }
+  }
+}

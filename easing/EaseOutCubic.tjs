@@ -1,0 +1,9 @@
+import {Direction} from "Direction.tjs";
+import {EaseCubic} from "EaseCubic.tjs";
+
+
+export class EaseOutCubic extends EaseCubic {
+  constructor(duration Number) {
+    super(duration, Direction.OUT);
+  }
+}

@@ -1,0 +1,9 @@
+import {Direction} from "Direction.tjs";
+import {EaseBack} from "EaseBack.tjs";
+
+
+export class EaseInBack extends EaseBack {
+  constructor(duration Number) {
+    super(duration, Direction.IN);
+  }
+}

@@ -1,0 +1,6 @@
+export interface Easing {
+  // output goes from 0 to 1 (and clamps if time is out of bounds)
+  map(time Number) Number; // time doesn't need to be relative
+  interp(time Number, y0 Number, y1 Number) Number;
+  get duration() Number;
+}

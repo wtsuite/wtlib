@@ -1,0 +1,28 @@
+import {Vec2} from "Vec2.tjs";
+
+export class Circle2 {
+  _center Vec2;
+  _radius Number;
+
+  constructor(center Vec2, radius Number) {
+    this._center = center;
+    this._radius = radius;
+  }
+
+  get center() Vec2 {
+    return this._center;
+  }
+
+  get radius() Number {
+    return this._radius;
+  }
+
+  set radius(r Number) {
+    this._radius = r;
+  }
+
+  contains(p Vec2) Boolean {
+    d := p.sub(this._center);
+    return d.normSq() <= this._radius*this._radius;
+  }
+}

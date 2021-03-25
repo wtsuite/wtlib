@@ -1,0 +1,7 @@
+export {SearchIndex} from "./SearchIndex.tjs";
+
+export {PageScore} from "./PageScore.tjs";
+
+export {searchPages} from "./searchPages.tjs";
+
+export {sanitizeQuery, highlightQuery} from "./ops.tjs";

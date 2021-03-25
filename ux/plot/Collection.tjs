@@ -1,0 +1,10 @@
+import {PlotContext} from "PlotContext.tjs";
+
+
+// abstraction of lineseries/pointseries/contours etc.
+export interface Collection {
+  get xBounds() Tuple<Number, Number>;
+  get yBounds() Tuple<Number, Number>;
+
+  draw(xPos function<Number, Number>, yPos function<Number, Number>, ctx PlotContext);
+}

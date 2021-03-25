@@ -1,0 +1,29 @@
+import {PlotContext} from "PlotContext.tjs";
+import {Collection} from "Collection.tjs";
+
+
+export class PaddingCollection implements Collection {
+  _xMin Number;
+  _xMax Number;
+  _yMin Number;
+  _yMax Number;
+
+  constructor(xMin Number, xMax Number, yMin Number, yMax Number) {
+    this._xMin = xMin;
+    this._xMax = xMax;
+    this._yMin = yMin;
+    this._yMax = yMax;
+  }
+
+  get xBounds() Tuple<Number, Number> {
+    return new Tuple(this._xMin, this._xMax);
+  }
+
+  get yBounds() Tuple<Number, Number> {
+    return new Tuple(this._yMin, this._yMax);
+  }
+
+  draw(xPos function<Number, Number>, yPos function<Number, Number>, ctx PlotContext) {
+    // doesn't do anything
+  }
+}

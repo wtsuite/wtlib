@@ -1,0 +1,123 @@
+import {Vec3} from "Vec3.tjs";
+
+export class Ten3 extends Array {
+  constructor(
+    xx Number, xy Number, xz Number,
+    yx Number, yy Number, yz Number,
+    zx Number, zy Number, zz Number) {
+    super(xx, xy, xz, yx, yy, yz, zx, zy, zz);
+  }
+
+  static fromArray(arr Array) Ten3 {
+    if (arr.length != 9) {
+      throw new Error("Error: expected 9 entries");
+    }
+
+    return new Ten3(
+      arr[0], arr[1], arr[2],
+      arr[3], arr[4], arr[5],
+      arr[6], arr[7], arr[8]);
+  }
+
+  static identity() Ten3 {
+    return new Ten3(
+      1.0, 0.0, 0.0, 
+      0.0, 1.0, 0.0,
+      0.0, 0.0, 1.0);
+  }
+
+  static zero() Ten3 {
+    return new Ten3(
+      0.0, 0.0, 0.0,
+      0.0, 0.0, 0.0,
+      0.0, 0.0, 0.0);
+  }
+
+  static rotation(angle Number, axis Vec3) Ten3 {
+    // angle in radians
+    // axis assumed to be normalized (not checked)
+    // returns rotation matrix
+    s := Math.sin(angle);
+    c := Math.cos(angle);
+    t := 1.0 - c;
+
+    // extract for compact notation
+    x := axis.x;
+    y := axis.y;
+    z := axis.z;
+
+    return new Ten3(
+      x*x*t + c, x*y*t+z*s, x*z*t-y*s,
+      y*x*t-z*s, y*y*t + c, y*z*t+x*s,
+      z*x*t+y*s, z*y*t-x*s, z*z*t + c);
+  }
+
+  copy() Ten3 {
+    return Ten3.fromArray(this);
+  }
+
+  value(i Int, j Int) Number {
+    // i is row index
+    // j is col index
+    // no bounds checking!
+    return this[i*3+j];
+  }
+
+  row(i Int) Vec3 {
+    k := i*3;
+    return Vec3.fromArray(this.slice(k, k+3));
+  }
+
+  col(j Int) Vec3 {
+    return new Vec3(this[0+j], this[3+j], this[6+j]);
+  }
+
+  get xx() Number { return this[0]; }
+  get xy() Number { return this[1]; }
+  get xz() Number { return this[2]; }
+  get yx() Number { return this[3]; }
+  get yy() Number { return this[4]; }
+  get yz() Number { return this[5]; }
+  get zx() Number { return this[6]; }
+  get zy() Number { return this[7]; }
+  get zz() Number { return this[8]; }
+
+  set xx(xx Number) { this[0] = xx; }
+  set xy(xy Number) { this[1] = xy; }
+  set xz(xz Number) { this[2] = xz; }
+  set yx(yx Number) { this[3] = yx; }
+  set yy(yy Number) { this[4] = yy; }
+  set yz(yz Number) { this[5] = yz; }
+  set zx(zx Number) { this[6] = zx; }
+  set zy(zy Number) { this[7] = zy; }
+  set zz(zz Number) { this[8] = zz; }
+
+  // Transform another Ten3
+  T(other Ten3) Ten3 {
+    // this is left-multiples ten3, (other is on right)
+    // return a new matrix
+    arr := new Array(9);
+
+    // TODO: manualy unroll
+    for (i := 0; i < 3; i++) {
+      for (j := 0; j < 3; j++) {
+        arr[i*3+j] = this.row(i).dot(other.col(j));
+      }
+    }
+
+    return Ten3.fromArray(arr);
+  }
+
+  // transform a vec3
+  t(x Vec3) Vec3 {
+
+    arr := new Array(3);
+
+    // TODO: manualy unroll
+    for (i := 0; i < 3; i++) {
+      arr[i] = this.row(i).dot(x);
+    }
+
+    return Vec3.fromArray(arr);
+  }
+}

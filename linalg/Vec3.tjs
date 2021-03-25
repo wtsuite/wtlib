@@ -1,0 +1,63 @@
+export class Vec3 {
+  _x Number;
+  _y Number;
+  _z Number;
+
+  constructor(x Number, y Number, z Number) {
+    this._x = x;
+    this._y = y;
+    this._z = z;
+  }
+
+  static fromArray(arr Array<Number>) Vec3 {
+    if (arr.length != 3) {
+      throw new Error("Error: expected 3 entries");
+    }
+
+    return new Vec3(arr[0], arr[1], arr[2]);
+  }
+
+  static zero() Vec3 {
+    return new Vec3(0.0, 0.0, 0.0);
+  }
+
+  copy() Vec3 {
+    return new Vec3(this._x, this._y, this._z);
+  }
+
+  get x() Number { return this._x; }
+  get y() Number { return this._y; }
+  get z() Number { return this._z; }
+
+  set x(x Number) { this._x = x; }
+  set y(y Number) { this._y = y; }
+  set z(z Number) { this._z = z; }
+
+  dot(other Vec3) Number {
+    return 
+      this._x*other._x + 
+      this._y*other._y + 
+      this._z*other._z;
+  }
+
+  normSq() Number {
+    return this.dot(this);
+  }
+
+  norm() Number {
+    // euclidean distance
+    return Math.sqrt(this.normSq());
+  }
+
+  scale(s Number) {
+    this._x *= s;
+    this._y *= s;
+    this._z *= s;
+  }
+  
+  normalize() Vec3 {
+    // returns new Vec3
+    s := 1.0/this.norm();
+    return new Vec3(this._x*s, this._y*s, this._z*s);
+  }
+}

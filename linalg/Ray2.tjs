@@ -1,0 +1,50 @@
+import {Vec2} from "Vec2.tjs";
+
+const TOL = 1e-10;
+
+// infinite line
+export class Ray2 {
+  _p Vec2;
+  _n Vec2;
+
+  constructor(p Vec2, n Vec2) {
+    this._p = p;
+    this._n = n;
+  }
+
+  get point() Vec2 {
+    return this._p;
+  }
+
+  get direction() Vec2 {
+    return this._n;
+  }
+
+  intersect(other Ray2) Vec2 {
+    pn  := this._n.cross(this._p);
+    prn := this._n.cross(other._p);
+    nrn := this._n.cross(other._n);
+
+    a := 0.0;
+
+    if (Math.abs(nrn) > TOL) { // XXX: better tolerance definition
+      a = (pn - prn)/nrn;
+    } else {
+      return this._p; // fallback point
+    }
+
+    return other._p.add(other._n.scale(a));
+  }
+
+  distance(v Vec2) Number {
+    dx := v.x - this._p.x;
+    dy := v.y - this._p.y;
+
+    return -this._n.y*dx + this._n.x*dy;
+  }
+
+  reverse() {
+    this._n.x *= -1.0;
+    this._n.y *= -1.0;
+  }
+}

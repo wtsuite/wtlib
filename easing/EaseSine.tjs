@@ -1,0 +1,9 @@
+import {AbstractEasing} from "AbstractEasing.tjs";
+
+
+export class EaseSine extends AbstractEasing {
+  mapInternal(x Number) Number {
+    return 1.0 - Math.cos((x *Math.PI)*0.5);
+  }
+}
+

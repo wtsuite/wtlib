@@ -1,0 +1,25 @@
+export interface PlotContext {
+  set pixelRatio(pr Number);
+  get pixelRatio() Number;
+  set fillStyle(color String);
+  get fillStyle() String;
+
+  clear();
+  clearRect(x0 Number, y0 Number, width Number, height Number);
+
+  // px -> ctx coords
+  xDist(dx Number) Number; // input value in px, for distances
+  xPos(x Number) Number; // input value in px, for positions
+  yDist(dy Number) Number; // input value in px, for distances
+  yPos(y Number) Number; // input value in px, for positions
+
+  beginLine(width Number, color String);
+  moveTo(x Number, y Number); // input in ctx coords
+  lineTo(x Number, y Number); // input in ctx coords
+  closeLine(); // close to last 'moveTo' pos, still requires endLine()!
+  endLine(); // apply stroke to current path
+
+  set font(f String);
+  measureText(txt String) Number; // returns value in px
+  label(txt String, x Number, y Number, anchor String, angle Number);
+}

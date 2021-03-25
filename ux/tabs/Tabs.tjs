@@ -1,0 +1,65 @@
+export class Tabs {
+  _tabs Array<Tuple<HTMLElement, HTMLElement>>;
+  _active Int;
+  _onfocus function<Int, void>;
+  _onblur function<Int, void>;
+
+  // tabIDs: [[lip-id, tab-id], ...]
+
+  constructor(tabIDs Array<Array<String>>) {
+    this._tabs = new Array();
+    this._active = -1;
+    this._onfocus = null;
+    this._onblur = null;
+
+    for (i := 0; i < tabIDs.length; i++) {
+      pair := tabIDs[i];
+
+      lip := document.getElementById(pair[0]);
+      tab := document.getElementById(pair[1]);
+
+      lip.removeAttribute("active");
+      tab.removeAttribute("active");
+
+      lip.addEventListener("click", (_) => {
+        this.select(i);
+      });
+
+      this._tabs.push(new Tuple(lip, tab));
+    }
+
+    this.select(0);
+  }
+
+  select(i Int) {
+    if (i < 0 || i > this._tabs.length - 1) {
+      console.log("selected tab out of range");
+    }
+
+    if (this._active != null && (this._active >= 0 && this._active < this._tabs.length)) {
+      this._tabs[this._active][0].removeAttribute("active");
+      this._tabs[this._active][1].removeAttribute("active");
+
+      if (this._onblur != null) {
+        this._onblur(this._active);
+      }
+    }
+
+    if (this._onfocus != null) {
+      this._onfocus(i);
+    }
+
+    this._tabs[i][0].setAttribute("active", "");
+    this._tabs[i][1].setAttribute("active", "");
+
+    this._active = i;
+  }
+
+  set onfocus(fn function<Int, void>) {
+    this._onfocus = fn;
+  }
+
+  set onblur(fn function<Int, void>) {
+    this._onblur = fn;
+  }
+}

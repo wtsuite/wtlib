@@ -1,0 +1,10 @@
+import {Direction} from "Direction.tjs";
+import {EaseCirc} from "EaseCirc.tjs";
+
+
+export class EaseOutCirc extends EaseCirc {
+  constructor(duration Number) {
+    super(duration, Direction.OUT);
+  }
+}
+

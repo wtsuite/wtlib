@@ -1,0 +1,176 @@
+const isWindows RegExp = new RegExp('Windows');
+const isAndroid RegExp = new RegExp('Android');
+const isLinux RegExp = new RegExp('Linux');
+const isIOS RegExp = new RegExp('(iPhone)|(iPad)');
+const isMac RegExp = new RegExp('Mac');
+
+const isEdge RegExp = new RegExp('(Edg)|(Edge)');
+const isChrome RegExp = new RegExp('Chrome');
+const isSafari RegExp = new RegExp('Safari');
+const isFirefox RegExp = new RegExp('Firefox');
+
+function parseOperatingSystem(ua String) String {
+  os := "";
+  switch {
+  case isAndroid.test(ua):
+    os = "Android";
+  case isIOS.test(ua):
+    os = "iOS";
+  case isMac.test(ua):
+    os = "Mac";
+  case isLinux.test(ua):
+    os = "Linux";
+  case isWindows.test(ua):
+    os = "Windows";
+  }
+
+  return os;
+}
+
+function parseEdgeVersion(ua String) String {
+  re := new RegExp('Edg/([0-9]+(\.[0-9]+)?)');
+  res := re.exec(ua);
+
+  if (res != null && res.length > 1) {
+    return res[1];
+  } 
+
+  return "";
+}
+
+function parseChromeVersion(ua String) String {
+  re := new RegExp('Chrome/([0-9]+(\.[0-9]+)?)');
+  res := re.exec(ua);
+
+  if (res != null && res.length > 1) {
+    return res[1];
+  } 
+
+  return "";
+}
+
+function parseSafariVersion(ua String) String {
+  re := new RegExp('Version/([0-9]+(\.[0-9]+)?)');
+  res := re.exec(ua);
+
+  if (res != null && res.length > 1) {
+    return res[1];
+  } 
+
+  return "";
+}
+
+function parseFirefoxVersion(ua String) String {
+  re := new RegExp('Firefox/([0-9]+(\.[0-9]+)?)');
+  res := re.exec(ua);
+
+  if (res != null && res.length > 1) {
+    return res[1];
+  } 
+
+  return "";
+}
+
+function parseBrowserUserAgent(ua String) Tuple<String, String> {
+  bf := "";
+  bv := "";
+  switch {
+  case isEdge.test(ua):
+    bf = "Edge";
+    bv = parseEdgeVersion(ua);
+  case isChrome.test(ua):
+    bf = "Chrome";
+    bv = parseChromeVersion(ua);
+  case isSafari.test(ua):
+    bf = "Safari";
+    bv = parseSafariVersion(ua);
+  case isFirefox.test(ua):
+    bf = "Firefox";
+    bv = parseFirefoxVersion(ua);
+  }
+
+  return new Tuple(bf, bv);
+}
+
+// returns: Linux/Firefox/84.0
+function cleanUserAgent(ua String) String {
+  os := parseOperatingSystem(ua);
+
+  b := parseBrowserUserAgent(ua);
+
+  return [os, b[0], b[1]].join("/");
+}
+
+var hideTriggered = false; // pagehide and visibilitychange compete for this
+var pageHidden = false;
+var pageLoadStart = (new Date()).getTime();
+
+function getReferrer() String {
+  if (hideTriggered) {
+    return window.location.pathname;
+  } else {
+    rf := document.referrer;
+    if (rf != "") {
+      if (rf.startsWith("http://")) {
+        rf = rf.slice(7);
+      } else if (rf.startsWith("https://")) {
+        rf = rf.slice(8);
+      }
+
+      if (rf.startsWith(window.location.host)) {
+        rf = rf.slice(window.location.host.length);
+      }
+    }
+    
+    return rf.split("?")[0];
+  }
+}
+
+function getScreenSize() String {
+  return window.screen.width.toString() + "x" + window.screen.height.toString();
+}
+
+function preparePayload() Object {
+  now := (new Date()).getTime();
+
+  obj := {};
+  obj["page"] = window.location.pathname;
+  obj["referrer"] = getReferrer();
+  obj["clientTimeStamp"] = now/1000.0;
+  obj["duration"] = (now - pageLoadStart)/1000.0;
+  obj["language"] = window.navigator.language;
+  obj["browser"] = cleanUserAgent(window.navigator.userAgent);
+  obj["screenSize"] = getScreenSize(); 
+
+  return obj;
+}
+
+function sendAnalytics() {
+  if (!pageHidden) {
+    window.navigator.sendBeacon(ANALYTICS, JSON.stringify(preparePayload()));
+    pageHidden = true;
+  }
+}
+
+function startAnalytics() {
+  if (ANALYTICS != "") {
+    window.addEventListener('pagehide', function(_) {
+      sendAnalytics();
+      hideTriggered = true;
+    });
+
+    document.addEventListener('visibilitychange', function(_) {
+      s := document.visibilityState;
+      if (s == 'hidden') {
+        sendAnalytics();
+        hideTriggered = true;
+      } else if (s == 'visible') {
+        // reset the pageLoadStart
+        pageLoadStart = (new Date()).getTime();
+        pageHidden = false;
+      }
+    });
+  }
+}
+
+startAnalytics();

@@ -1,0 +1,159 @@
+import {Vec3} from "Vec3.tjs";
+import {Vec4} from "Vec4.tjs";
+import {Ten3} from "Ten3.tjs";
+
+
+export class Ten4 extends Array {
+  constructor(
+    xx Number, xy Number, xz Number, xw Number,
+    yx Number, yy Number, yz Number, yw Number,
+    zx Number, zy Number, zz Number, zw Number,
+    wx Number, wy Number, wz Number, ww Number) {
+    super(xx, xy, xz, xw, yx, yy, yz, yw, zx, zy, zz, zw, wx, wy, wz, ww);
+  }
+
+  static fromArray(arr Array) Ten4 {
+    if (arr.length != 16) {
+      throw new Error("Error: expected 16 entries");
+    }
+
+    return new Ten4(
+      arr[ 0], arr[ 1], arr[ 2], arr[ 3],
+      arr[ 4], arr[ 5], arr[ 6], arr[ 7],
+      arr[ 8], arr[ 9], arr[10], arr[11],
+      arr[12], arr[13], arr[14], arr[15]);
+  }
+
+  static fromTen3(ten3 Ten3) Ten4 {
+    return new Ten4(
+      ten3.xx, ten3.xy, ten3.xz, 0.0,
+      ten3.yx, ten3.yy, ten3.yz, 0.0,
+      ten3.zx, ten3.zy, ten3.zz, 0.0,
+          0.0,     0.0,     0.0, 1.0);
+  }
+
+  static identity() Ten4 {
+    return new Ten4(
+      1.0, 0.0, 0.0, 0.0, 
+      0.0, 1.0, 0.0, 0.0,
+      0.0, 0.0, 1.0, 0.0,
+      0.0, 0.0, 0.0, 1.0);
+  }
+
+  static zero() Ten4 {
+    return new Ten4(
+    0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0);
+  }
+
+  copy() Ten4 {
+    return Ten4.fromArray(this);
+  }
+
+  translate(d Vec3) Ten4 {
+    result := this.copy();
+    result[ 3] += d.x;
+    result[ 7] += d.y;
+    result[11] += d.z;
+
+    return result;
+  }
+
+  rotate(angle Number, axis Vec3) Ten4 {
+    // angle in radians
+    // axis assumed to be normalized
+    Q3 := Ten3.rotation(angle, axis);
+    Q4 := Ten4.fromTen3(Q3);
+
+    return Q4.T(this);
+  }
+
+  value(i Int, j Int) Number {
+    // i is row index
+    // j is col index
+    // no bounds checking!
+    return this[i*4+j];
+  }
+
+  row(i Int) Vec4 {
+    k := i*4;
+    return Vec4.fromArray(this.slice(k, k+4));
+  }
+
+  col(j Int) Vec4 {
+    return new Vec4(this[0+j], this[4+j], this[8+j], this[12+j]);
+  }
+
+  get xx() Number { return this[ 0]; }
+  get xy() Number { return this[ 1]; }
+  get xz() Number { return this[ 2]; }
+  get xw() Number { return this[ 3]; }
+  get yx() Number { return this[ 4]; }
+  get yy() Number { return this[ 5]; }
+  get yz() Number { return this[ 6]; }
+  get yw() Number { return this[ 7]; }
+  get zx() Number { return this[ 8]; }
+  get zy() Number { return this[ 9]; }
+  get zz() Number { return this[10]; }
+  get zw() Number { return this[11]; }
+  get wx() Number { return this[12]; }
+  get wy() Number { return this[13]; }
+  get wz() Number { return this[14]; }
+  get ww() Number { return this[15]; }
+
+  set xx(xx Number) { this[ 0] = xx; }
+  set xy(xy Number) { this[ 1] = xy; }
+  set xz(xz Number) { this[ 2] = xz; }
+  set xw(xw Number) { this[ 3] = xw; }
+  set yx(yx Number) { this[ 4] = yx; }
+  set yy(yy Number) { this[ 5] = yy; }
+  set yz(yz Number) { this[ 6] = yz; }
+  set yw(yw Number) { this[ 7] = yw; }
+  set zx(zx Number) { this[ 8] = zx; }
+  set zy(zy Number) { this[ 9] = zy; }
+  set zz(zz Number) { this[10] = zz; }
+  set zw(zw Number) { this[11] = zw; }
+  set wx(wx Number) { this[12] = wx; }
+  set wy(wy Number) { this[13] = wy; }
+  set wz(wz Number) { this[14] = wz; }
+  set ww(ww Number) { this[15] = ww; }
+
+  // Transform another Ten4
+  T(other Ten4) Ten4 {
+    // this is left-multiples ten4, (other is on right)
+    // return a new matrix
+
+    return new Ten4(
+      this[ 0]*other[0] + this[ 1]*other[4] + this[ 2]*other[ 8] + this[ 3]*other[12],
+      this[ 0]*other[1] + this[ 1]*other[5] + this[ 2]*other[ 9] + this[ 3]*other[13],
+      this[ 0]*other[2] + this[ 1]*other[6] + this[ 2]*other[10] + this[ 3]*other[14],
+      this[ 0]*other[3] + this[ 1]*other[7] + this[ 2]*other[11] + this[ 3]*other[15],
+      this[ 4]*other[0] + this[ 5]*other[4] + this[ 6]*other[ 8] + this[ 7]*other[12],
+      this[ 4]*other[1] + this[ 5]*other[5] + this[ 6]*other[ 9] + this[ 7]*other[13],
+      this[ 4]*other[2] + this[ 5]*other[6] + this[ 6]*other[10] + this[ 7]*other[14],
+      this[ 4]*other[3] + this[ 5]*other[7] + this[ 6]*other[11] + this[ 7]*other[15],
+      this[ 8]*other[0] + this[ 9]*other[4] + this[10]*other[ 8] + this[11]*other[12],
+      this[ 8]*other[1] + this[ 9]*other[5] + this[10]*other[ 9] + this[11]*other[13],
+      this[ 8]*other[2] + this[ 9]*other[6] + this[10]*other[10] + this[11]*other[14],
+      this[ 8]*other[3] + this[ 9]*other[7] + this[10]*other[11] + this[11]*other[15],
+      this[12]*other[0] + this[13]*other[4] + this[14]*other[ 8] + this[15]*other[12],
+      this[12]*other[1] + this[13]*other[5] + this[14]*other[ 9] + this[15]*other[13],
+      this[12]*other[2] + this[13]*other[6] + this[14]*other[10] + this[15]*other[14],
+      this[12]*other[3] + this[13]*other[7] + this[14]*other[11] + this[15]*other[15]);
+  }
+
+  // transform a vec4
+  t(x Vec4) Vec4 {
+    arr := new Array(4);
+
+    // TODO: manualy unroll
+    for (i := 0; i < 4; i++) {
+      arr[i] = this.row(i).dot(x);
+    }
+
+    return Vec4.fromArray(arr);
+  }
+}
+

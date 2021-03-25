@@ -1,0 +1,9 @@
+export template carousel(id) extends div super(class=carousel)
+  button(class=carousel-left, id=$id + "-left")
+
+  button(class=carousel-right, id=$id + "-right")
+
+  div(class=carousel-inner, id=$id)
+    block default
+
+// TODO: nice default style

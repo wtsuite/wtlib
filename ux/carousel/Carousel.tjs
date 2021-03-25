@@ -1,0 +1,315 @@
+import {EaseInOutSine as Easing} from "easing";
+import * as linalg from "linalg";
+
+const SELECTED String = "selected";
+const RADIUS_FACTOR Number = 1.3;
+const BLUR_FACTOR Number = 0.2;
+const MAX_BLUR_RADIUS Int = 4; // the higher, the more expensive
+const MIN_SCALE Number = 0.5;
+const DISTRIBUTION_FACTOR Number = 0.5;
+const EASING_DURATION Number = 700; // ms
+
+export class Carousel {
+  _container HTMLElement;
+  _buttons HTMLElement;
+  _leftButton HTMLElement;
+  _rightButton HTMLElement;
+  _n Int;
+  _selected Int;
+  _offset Int;
+  _gutter Number; // in px, detected based on initial state
+  _zRadius Number; // radius of the carousel, in px
+  _distributionFactor Number;
+  _onblur function<Int, void>;
+  _onfocus function<Int, void>;
+  _autoRotate Boolean; // true on page load, false upon any user interaction
+
+  constructor(containerID String, buttonsID String, options Object) {
+    this._container = document.getElementById(containerID);
+    this._buttons = document.getElementById(buttonsID);
+
+    this._leftButton = document.getElementById(containerID + "-left");
+    this._rightButton = document.getElementById(containerID + "-right");
+
+    this._container.normalize();
+    this._buttons.normalize();
+
+    this._selected = null;
+    this._n = Math.min(this._container.children.length, this._buttons.children.length);
+    this._offset = 0;
+
+    this._gutter = null;
+    this._zRadius = this._container.getBoundingClientRect().width*RADIUS_FACTOR;
+
+    this._onblur = null;
+    this._onfocus = null;
+
+    this._autoRotate = true;
+
+    this._distributionFactor = DISTRIBUTION_FACTOR;
+    if (!Object.isUndefined(options["distributionFactor"])) {
+      this._distributionFactor = cast(options["distributionFactor"], Number);
+    }
+
+    for (i := 0; i < this._n; i++) {
+      button := this._buttons.children[i];
+      
+      button.addEventListener("click", (_) => {
+        this.selectSmooth(i);
+        this._autoRotate = false;
+      });
+
+      div := this._container.children[i];
+      divRect := div.getBoundingClientRect();
+
+      if (this._gutter == null && i > 0) {
+        prevRect := this._container.children[i-1].getBoundingClientRect();
+        this._gutter = divRect.left - prevRect.right;
+      }
+    }
+
+    this.selectImmediate(0);
+
+    window.addEventListener("resize", (_) => {
+      this._zRadius = this._container.getBoundingClientRect().width*RADIUS_FACTOR;
+
+      this.selectImmediate(this._selected);
+    });
+
+    this._leftButton.addEventListener("click", (_) => {
+      this._autoRotate = false;
+      this.selectSmooth(this._selected - 1);
+    });
+
+    this._rightButton.addEventListener("click", (_) => {
+      this._autoRotate = false;
+      this.selectSmooth(this._selected + 1);
+    });
+
+    // TODO: move this to a separate Timer class
+    var fnMove function<void> = () => {
+      if (this._autoRotate) {
+        this.selectSmooth(this._selected + 1);
+
+        setTimeout(fnMove, 10000);
+      }
+    };
+
+    setTimeout(fnMove, 10000);
+  }
+
+  pause() {
+    this._autoRotate = false;
+  }
+
+  play() {
+    this._autoRotate = true;
+  }
+
+  set onfocus(fn function<Int, void>) {
+    this._onfocus = fn;
+  }
+
+  set onblur(fn function<Int, void>) {
+    this._onblur = fn;
+  }
+
+  private containerIndex(i Int) Int {
+    i = (i + this._offset)%this._n;
+    return (i < 0) ? i + this._n : i;
+  }
+
+  private deselectCurrent(next Int) {
+    // first deselect
+    if (this._selected != null && this._selected != next) {
+      if (this._onblur != null) {
+        this._onblur(this._selected);
+      }
+
+      this._buttons.children[this._selected].removeAttribute(SELECTED);
+      this._container.children[this.containerIndex(this._selected)].removeAttribute(SELECTED);
+    }
+  }
+
+  private selectNext(next Int) {
+    this._buttons.children[next].setAttribute(SELECTED, "");
+    this._container.children[this.containerIndex(next)].setAttribute(SELECTED, "");
+    this._selected = next;
+
+    if (this._onfocus != null) {
+      this._onfocus(this._selected);
+    }
+  }
+
+  private selectImmediate(i Int) {
+    this.deselectCurrent(i);
+
+    this.selectRaw(i);
+
+    this.selectNext(i);
+  }
+
+  private selectRaw(f Number) {
+    while (f < 0.0) {
+      f += this._n;
+    }
+    f = f % this._n;
+
+    i := Math.round(f);
+    i = i % this._n;
+
+    this.balance(i);
+
+    // calculate the carousel angle
+    angle := 2.0*Math.PI*(this.containerIndex(cast(f, Int)) / this._n);
+
+    this.moveToRaw(angle);
+  }
+
+  private get width() Number {
+    return this._container.getBoundingClientRect().width;
+  }
+
+  private calculateChildPos(cAngle Number, i Int) linalg.Vec3 {
+    angle := 2.0*Math.PI*(i / this._n);
+
+    // negative angle is on left, positive angle is on right
+    diff := angle - cAngle;
+
+    while (diff < -Math.PI) {
+      diff += 2.0*Math.PI;
+    }
+
+    while (diff > Math.PI) {
+      diff -= 2.0*Math.PI;
+    }
+
+    diff = diff*DISTRIBUTION_FACTOR;
+
+    // offset from center of screen
+    x := this._zRadius*Math.sin(diff);
+    //x = 0.0;
+
+    // offset from screen
+    z := this._zRadius*(1.0 - Math.cos(diff));
+
+    // left position in unchanged container
+    x0 := i*(this._gutter + this.width);
+
+    xLeft := x - x0;
+
+    return new linalg.Vec3(xLeft, Math.max(Math.min(diff, Math.PI*0.5), -Math.PI*0.5), z);
+  }
+
+  private selectSmooth(i Int) {
+    i = i % this._n;
+    if (i < 0) {
+      i += this._n;
+    }
+
+    this.deselectCurrent(i);
+
+    prev := this._selected;
+
+    // go from prev to i
+    let start Number;
+    let stop Number = i;
+    if (Math.abs(i - prev) > 0.5*this._n) {
+      if (i > prev) {
+        start = prev + this._n;
+      } else {
+        start = prev - this._n;
+      }
+    } else {
+      start = prev;
+    }
+
+    easing := new Easing(EASING_DURATION);
+    let animStart Number = null;
+    var fn function<Number, void> = (ts Number) => {
+      if (animStart == null) {
+        animStart = ts;
+      }
+
+      x := easing.interp(ts - animStart, start, stop);
+
+      this.selectRaw(x);
+
+      if (Math.abs(x - stop) > 1e-8) {
+        window.requestAnimationFrame(fn);
+      }
+    };
+
+    window.requestAnimationFrame(fn);
+
+    this.selectNext(i);
+  }
+
+  // raw distance from start (negative or positive)
+  // positive delta moves everything right
+  private moveToRaw(cAngle Number) {
+    // not yet very smooth
+    for (i := 0 ; i < this._n; i++) {
+      pos := this.calculateChildPos(cAngle, i);
+
+      child := this._container.children[i];
+      child.style.left = pos.x.toString() + "px";
+
+      child.style.setProperty("filter", "blur(" + Math.min(pos.z*BLUR_FACTOR, MAX_BLUR_RADIUS).toString() + "px)");
+
+      if (this._zRadius - pos.z < 0.0) {
+        child.style.setProperty("visibility", "hidden");
+      } else {
+        child.style.setProperty("visibility", "visible");
+        child.style.setProperty("z-index", Math.round(this._zRadius - pos.z).toString());
+      }
+
+      child.style.setProperty("transform", "scale(" + Math.max(Math.cos(pos.y), MIN_SCALE).toString() + ")");
+    }
+  }
+
+  private balance(i Int) {
+    pivot := Math.floor(this._n*0.5);
+
+    // we should cycle the shortest possible distance
+    diff := this.containerIndex(i) - pivot;
+
+    if (diff < 0) {
+      if (diff < 0.5*this._n) {
+        while (this.containerIndex(i) != pivot) {
+          this.cycleRight();
+        }
+      } else {
+        while (this.containerIndex(i) != pivot) {
+          this.cycleLeft();
+        }
+      }
+    } else if (diff > 0) {
+      if (diff > 0.5*this._n) {
+        while (this.containerIndex(i) != pivot) {
+          this.cycleRight();
+        }
+      } else {
+        while (this.containerIndex(i) != pivot) {
+          this.cycleLeft();
+        }
+      }
+    }
+  }
+
+  private cycleRight() {
+    // last element is moved to the start
+    lastChild := this._container.removeChild(this._container.children[this._n-1]);
+    this._container.insertBefore(lastChild, this._container.firstChild);
+
+    this._offset += 1;
+  }
+
+  private cycleLeft() {
+    // first is element is moved to end
+    firstChild := this._container.removeChild(this._container.children[0]);
+    this._container.appendChild(firstChild);
+
+    this._offset -= 1;
+  }
+}

@@ -1,0 +1,6 @@
+import {EasePoly} from "EasePoly.tjs";
+
+
+export class EaseCubic extends EasePoly {
+  get p() Number {return 3.0}
+}

@@ -1,0 +1,10 @@
+export style centering(maxWidth=1400px, gutter=1rem)
+  {
+    width: calc(100% - $(2*$gutter)),
+    max-width: $maxWidth,
+    margin-right: auto,
+    margin-left: auto,
+    position: relative,
+    padding-left: $gutter,
+    padding-right: $gutter,
+  }

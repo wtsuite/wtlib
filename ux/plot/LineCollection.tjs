@@ -1,0 +1,58 @@
+import {PlotContext} from "PlotContext.tjs";
+import {Collection} from "Collection.tjs";
+
+
+function dataBounds(data any) Tuple<Number, Number> {
+  min := data.reduce(
+    function(a Number, b Number) Number {return Math.min(a, b)}, 
+    Number.MAX_VALUE);
+
+  max := data.reduce(
+    function(a Number, b Number) Number {return Math.max(a, b)}, 
+    -Number.MAX_VALUE);
+
+  return new Tuple(min, max);
+}
+
+export class LineCollection implements Collection {
+  _x; // Float32Array, or Float64Array
+  _y;
+  _width Number;
+  _color String;
+  
+  constructor(x, y, width Number = 1.0, color String = "#000") {
+    if (x.length != y.length) {
+      throw new Error("not same length");
+    }
+
+    if (x.length < 2) {
+      throw new Error("need at least two points");
+    }
+
+    this._x = x;
+    this._y = y;
+
+    this._width = width;
+    this._color = color;
+  }
+
+  get xBounds() Tuple<Number, Number> {
+    return dataBounds(this._x);
+  }
+
+  get yBounds() Tuple<Number, Number> {
+    return dataBounds(this._y);
+  }
+
+  draw(xPos function<Number, Number>, yPos function<Number, Number>, ctx PlotContext) {
+    ctx.beginLine(this._width, this._color);
+
+    ctx.moveTo(xPos(this._x[0]), yPos(this._y[0]));
+
+    for (i := 1; i < this._x.length; i++) {
+      ctx.lineTo(xPos(this._x[i]), yPos(this._y[i]));
+    }
+
+    ctx.endLine();
+  }
+}

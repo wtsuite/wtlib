@@ -1,0 +1,56 @@
+import {Direction} from "Direction.tjs";
+import {Easing} from "Easing.tjs";
+
+abstract class AbstractEasing implements Easing {
+  _duration Number;
+  _type Direction;
+
+  abstract mapInternal(x Number) Number; // x: 0..1, y: 0..1
+
+  // duration in milliseconds if input time is also in milliseconds
+  constructor(duration Number, type Direction) {
+    this._duration = duration;
+    this._type = type;
+  }
+
+  get duration() Number {
+    return this._duration;
+  }
+
+  // time is relative to 0.0
+  map(time Number) Number {
+    t := time/this._duration;
+    let f;
+    if (t < 0.0) {
+      f = 0.0;
+    } else if (t > 1.0) {
+      f = 1.0;
+    } else {
+      switch(this._type) {
+        case Direction.IN:
+          f = this.mapInternal(t);
+          break;
+        case Direction.OUT:
+          f = 1.0 - this.mapInternal(1.0 - t);
+          break;
+        case Direction.IN_OUT:
+          if (t < 0.5) {
+            f = 0.5*this.mapInternal(2.0*t);
+          } else {
+            f = 1.0 - 0.5*this.mapInternal(2.0*(1.0 - t));
+          }
+          break;
+        default:
+          throw new Error("unhandled Easing type");
+          break;
+      }
+    }
+
+    return f;
+  }
+
+  interp(time Number, y0 Number, y1 Number) Number {
+    f := this.map(time);
+    return y0*(1.0 - f) + y1*f;
+  }
+}

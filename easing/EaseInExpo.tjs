@@ -1,0 +1,9 @@
+import {Direction} from "Direction.tjs";
+import {EaseExpo} from "EaseExpo.tjs";
+
+
+export class EaseInExpo extends EaseExpo {
+  constructor(duration Number) {
+    super(duration, Direction.IN);
+  }
+}

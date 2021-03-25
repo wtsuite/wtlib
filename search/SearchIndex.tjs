@@ -1,0 +1,196 @@
+export class SearchIndex{
+  _onready Array<function<void>>;
+  _data any;
+
+  // opt not yet used
+  constructor(url String, opt Object = {}){
+    this._onready = [];
+
+    this._data = {
+      pages: [null]
+    };
+
+    fetch(url).then((resp) any => {
+      return resp.json();
+    }).catch((e)=>{console.log('unable to fetch ' + url)}).then((d any) => {
+      this._data=d;
+
+      this._onready.forEach((fn)=>{
+        fn();
+      });
+
+      this._onready=[];
+    });
+  }
+
+  page(i Int) Object<url: String, title: String, content: Array<String>> {
+    return this._data.pages[i];
+  }
+
+  ignore(word String) Boolean {
+    return !Object.isUndefined(this._data.ignore[word]);
+  }
+
+  private collect(data any, s Set<Int>) {
+    for(let k in data){
+      if (k == 'pages') {
+        data.pages.forEach((i Int)=>{
+          s.add(i);
+        });
+      } else {
+        this.collect(data[k], s);
+      }
+    }
+  }
+
+  private search(data any, query String, sw Boolean, s Set<Int>){
+    if (query.length==0) {
+      if (sw) {
+        this.collect(data, s);
+      } else if (!Object.isUndefined(data.pages)) {
+        data.pages.forEach((i Int)=>{
+          s.add(i)
+        });
+
+        return
+      }
+    }
+
+    c := query.slice(0,1);
+
+    subData := data[c];
+
+    if(!Object.isUndefined(subData)) {
+      this.search(subData, query.slice(1), sw, s);
+    }
+  }
+
+  match(query String) Set<Int> {
+    let s Set<Int> = new Set();
+
+    this.search(this._data.index, query, false, s);
+
+    return s;
+  }
+
+  matchPrefix(query String) Set<Int> {
+    let s Set<Int> = new Set();
+
+    this.search(this._data.index, query, true, s);
+
+    return s;
+  }
+
+  matchSuffix(query String) Set<Int> {
+    let s Set<Int> = new Set();
+
+    this.search(this._data.partial, query, false, s);
+
+    return s;
+  }
+
+  matchSubstring(query String) Set<Int> {
+    let s Set<Int> = new Set();
+
+    this.search(this._data.partial, query, true, s);
+
+    return s;
+  }
+
+  private initFuzzy(limit Int) Array<Set<Int>> {
+    if (limit < 0) {
+      throw new Error('fuzzy limit must be positive');
+    }
+
+    let sets Array<Set<Int>> = new Array(limit+1);
+
+    for (i := 0; i <= limit; i++){
+      sets[i] = new Set();
+    };
+
+    return sets;
+  }
+
+  private fuzzyInternal(data any, query String, r any, t, limit Int, sw Boolean, sets Array<Set<Int>>) {
+    n := query.length;
+    //d := t.length;
+    i := t.length;
+    R := new Array(n+1);
+    R[0]=i;
+    for (j := 1; j <= n; j++){
+      if (i == 0) {
+        R[j] = j;
+      } else {
+        dc := r[j] + 1;
+        ic := R[j-1] + 1;
+        sc := r[j-1] + ((query.codePointAt(j-1) == t.codePointAt(i-1))?0:1);
+        R[j]=Math.min(cast(dc, Int), Math.min(cast(ic, Int), cast(sc, Int)));
+      }
+    }
+    ll := R[(i<n+1)?i:n];
+    ul := R[n];
+
+    if (ll > limit) {
+      return;
+    }
+
+    if (sw && ul<=limit){
+      this.collect(data, sets[ul]);
+
+      return;
+    }
+
+    for (let k in data){
+      if (k == 'pages') {
+        if (ul <= limit) {
+          data.pages.forEach((i)=>{
+            sets[ul].add(i);
+          });
+        }
+      } else {
+        this.fuzzyInternal(data[k], query, R, t+k, limit, sw, sets);
+      }
+    }
+  }
+
+  // limit is typically 2 or 3
+  fuzzy(query String, limit Int) Array<Set<Int>> {
+    sets := this.initFuzzy(limit);
+
+    this.fuzzyInternal(this._data.index, query, null, '', limit, false, sets);
+
+    return sets;
+  }
+
+  fuzzyPrefix(query String, limit Int) Array<Set<Int>> {
+    sets := this.initFuzzy(limit);
+
+    this.fuzzyInternal(this._data.index, query, null, '', limit, true, sets);
+
+    return sets;
+  }
+
+  fuzzySuffix(query String, limit Int) Array<Set<Int>> {
+    sets := this.initFuzzy(limit);
+
+    this.fuzzyInternal(this._data.partial, query, null, '', limit, false, sets);
+
+    return sets;
+  }
+
+  fuzzySubstring(query String, limit Int) Array<Set<Int>> {
+    sets := this.initFuzzy(limit);
+
+    this.fuzzyInternal(this._data.partial, query, null, '', limit, true, sets);
+
+    return sets;
+  }
+
+  set onready(fn function<void>) {
+    if(this.page(0) != null){
+      fn();
+    }else{
+      this._onready.push(fn);
+    }
+  }
+}

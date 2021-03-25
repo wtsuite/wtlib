@@ -1,0 +1,95 @@
+// each matched key is one point
+// each matched key in the title is one extra point
+export class PageScore {
+  _keys Array<String>;
+  _page Object<url: String, title: String, content: Array<String>>;
+  _keyDistance Array<Int>;
+
+  constructor(keys Array<String>, page Object<url: String, title: String, content: Array<String>>) {
+    nKeys := keys.length;
+
+    // for more advanced scoring
+    this._keys = keys;
+    this._page = page;
+
+    this._keyDistance = new Array(nKeys);
+    this._keyDistance.fill(-1); // -1 
+  }
+
+  matchKey(i Int, distance Int) {
+    this._keyDistance[i] = distance;
+  }
+
+  // higher better
+  countMatches() Int {
+    c := 0;
+
+    for (i := 0; i < this._keys.length; i++) {
+      d := this._keyDistance[i];
+      if (d > -1) {
+        c += 1;
+      }
+
+      // a title match is worth one more point
+      re := new RegExp(this._keys[i], "gi"); // case insensitive search!
+      while (re.exec(this._page.title) != null) {
+        c += 1;
+      }
+    }
+
+    return c;
+  }
+
+  // distance of matched keys
+  // lower is better
+  sumTotalDistance() Int {
+    s := 0;
+
+    this._keyDistance.forEach((d Int)=> {
+      if (d > -1) {
+        s += d;
+      }
+    });
+
+    return s;
+  }
+}
+
+function compareScore(a PageScore, b PageScore) Int {
+  ac := a.countMatches();
+  bc := b.countMatches();
+
+  if (ac == bc) {
+    return a.sumTotalDistance() - b.sumTotalDistance();
+  } else {
+    return bc - ac;
+  }
+}
+
+// if filter==true: keep only the highest match counts
+export function sortPages(r Map<Int, PageScore>, filter Boolean = false) Array<Int> {
+  pageIDs := [];
+  for (let pair of r) {
+    key := pair[0];
+    pageIDs.push(key);
+  }
+
+  pageIDs.sort(function(a Int, b Int) Int {
+    return compareScore(r.get(a), r.get(b));
+  });
+
+  if (filter) {
+    highestMatchCount := 0;
+    for (let pair of r) {
+      highestMatchCount = Math.max(highestMatchCount, cast(cast(pair, Array)[1], PageScore).countMatches())
+    }
+
+    pageIDs = pageIDs.filter(function(i Int) Boolean {
+      ps := r.get(i);
+
+      return ps.countMatches() == highestMatchCount;
+    });
+  }
+
+  return pageIDs;
+}

@@ -1,0 +1,73 @@
+export class Vec2 {
+  _x Number;
+  _y Number;
+
+  constructor(x Number, y Number) {
+    this._x = x;
+    this._y = y;
+  }
+
+  static fromArray(arr Array<Number>) Vec2 {
+    if (arr.length != 2) {
+      throw new Error("Error: expected 2 entries");
+    }
+
+    return new Vec2(arr[0], arr[1]);
+  }
+
+  static zero() Vec2 {
+    return new Vec2(0.0, 0.0);
+  }
+
+  copy() Vec2 {
+    return new Vec2(this._x, this._y);
+  }
+
+  get x() Number { return this._x; }
+  get y() Number { return this._y; }
+
+  set x(x Number) { this._x = x; }
+  set y(y Number) { this._y = y; }
+
+  dot(other Vec2) Number {
+    return 
+      this._x*other._x + 
+      this._y*other._y;
+  }
+
+  cross(other Vec2) Number {
+    return this.x*other.y - this.y*other.x;
+  }
+
+  normSq() Number {
+    return this.dot(this);
+  }
+
+  norm() Number {
+    // euclidean distance
+    return Math.sqrt(this.normSq());
+  }
+
+  distance(other Vec2) Number {
+    return other.sub(this).norm();
+  }
+
+  scale(s Number) Vec2 {
+    return new Vec2(this._x*s, this._y*s);
+  }
+
+  normalize() Vec2 {
+    // returns a new Vec2
+    s := 1.0/this.norm();
+    return new Vec2(this._x*s, this._y*s);
+  }
+
+  // this - other
+  sub(other Vec2) Vec2 {
+    return new Vec2(this._x - other._x, this._y - other._y);
+  }
+
+  add(other Vec2) Vec2 {
+    return new Vec2(this._x + other._x, this._y + other._y);
+  }
+}

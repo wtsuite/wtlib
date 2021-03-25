@@ -1,0 +1,17 @@
+{
+  "templateModules": {
+    "icons": "./icons/index.thtml",
+    "layout": "./layout/index.thtml",
+    "ux": "./ux/index.thtml"
+  },
+  "scriptModules": {
+    "analytics": "./analytics/index.tjs",
+    "easing": "./easing/index.tjs",
+    "linalg": "./linalg/index.tjs",
+    "search": "./search/index.tjs",
+    "ux": "./ux/index.tjs"
+  },
+  "shaderModules": {
+    "colors": "./colors/index.tglsl"
+  }
+}

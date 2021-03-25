@@ -1,0 +1,68 @@
+import {SearchIndex} from "SearchIndex.tjs";
+import {PageScore, sortPages} from "PageScore.tjs";
+
+
+// shorter keys -> less fuzzy search
+function determineFuzzyness(key String) Int {
+  fuzzyness := 2;
+  if (key.length < 4) {
+    fuzzyness = 0;
+  } else if (key.length < 5) {
+    fuzzyness = 1;
+  }
+
+  return fuzzyness;
+}
+
+// returns sorted list of pages
+export function searchPages(si SearchIndex, keys Array<String>, lastPrefix Boolean = false) Promise<Array<Int>> {
+  nKeys := keys.length;
+
+  return new Promise(function(resolve function<Array<Int>, void>, reject function<Error, void>) {
+    si.onready = function() {
+      ranking := new Map(); // page index -> PageScore
+
+      for (i := 0; i < nKeys; i++) {
+        key := keys[i].toLowerCase();
+
+        fuzzyness := determineFuzzyness(key);
+
+        if (!si.ignore(key)) {
+          let groups Array<Set<Int>>;
+          if (i==nKeys-1 && lastPrefix) {
+            groups = si.fuzzyPrefix(key, fuzzyness);
+          } else {
+            groups = si.fuzzy(key, fuzzyness);
+            n := 0;
+            groups.forEach(function(g Set<Int>) {n += g.size});
+            if (n < 5) {
+              groups = si.fuzzySubstring(key, fuzzyness);
+            }
+          }
+
+          for (d := 0; d < groups.length; d++) {
+            pages := Array.from(groups[d]);
+
+            for (let pageID_ of pages) {
+              pageID := cast(pageID_, Int);
+
+              let pageScore = null;
+              if (!ranking.has(pageID)) {
+                pageScore = new PageScore(keys, si.page(pageID));
+                ranking.set(pageID, pageScore);
+              } else {
+                pageScore = ranking.get(pageID);
+              }
+
+              pageScore.matchKey(i, d);
+            }
+          }
+        }
+      }
+
+      // also filter out the highest match counts
+      sorted := sortPages(ranking, true);
+      resolve(sorted);
+    };
+  });
+}
