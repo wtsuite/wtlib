@@ -1,8 +1,7 @@
 export template loading extends div super(id=loading)
 
-var size = 4rem
-
-var scale = 0.8
+const size = 4rem
+const scale = 0.8
 
 
 template loadingicon extends dummy super()

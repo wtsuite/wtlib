@@ -1,7 +1,7 @@
 import {Direction} from "Direction.tjs";
 import {Easing} from "Easing.tjs";
 
-abstract class AbstractEasing implements Easing {
+export abstract class AbstractEasing implements Easing {
   _duration Number;
   _type Direction;
 

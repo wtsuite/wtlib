@@ -3,10 +3,10 @@ parameters(extension)
 import *($extension) from "./mdi-icon.thtml"
 
 export template iconfactory(icon, height, href=null, style={}) extends dummy super()
-  var iconName=ifelse(isstring($icon), $icon, icon[0])
-  var iconScale=ifelse(isstring($icon), null, icon[1])
+  const iconName=ifelse(isstring($icon), $icon, icon[0])
+  const iconScale=ifelse(isstring($icon), null, icon[1])
 
-  var iconStyle=ifelse(isvar(height), 
+  const iconStyle=ifelse(exists(height), 
     {
       height: $height,
       width: $height,

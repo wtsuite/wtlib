@@ -2,7 +2,7 @@ export function grid(gutter, columns=12, nested=true) {
   {
     display: grid,
     grid-column-gap: $gutter,
-    grid-template-columns: c := ifelse(islist($columns), $columns, list($columns, 1fr)),
+    grid-template-columns: (c = ifelse(islist($columns), $columns, list($columns, 1fr))),
     "-ms-grid-columns": $c,
     grid-auto-rows: min-content,
     grid-row-gap: $gutter,

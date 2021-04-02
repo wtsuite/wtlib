@@ -1,0 +1,18 @@
+export class Hamburger {
+  _links HTMLElement;
+  _button HTMLElement;
+  constructor(linksID String, buttonID String) {
+    this._links = document.getElementById(linksID);
+    this._button = document.getElementById(buttonID);
+
+    this._button.addEventListener('click', (_)=>{
+      if(this._button.getAttribute('selected') == null){
+        this._links.setAttribute('show','');
+        this._button.setAttribute('selected','');
+      }else{
+        this._links.removeAttribute('show');
+        this._button.removeAttribute('selected');
+      }
+    });
+  }
+}

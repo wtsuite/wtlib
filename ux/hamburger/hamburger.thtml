@@ -1,0 +1,20 @@
+import * as icons from "icons"
+
+export style hamburger-style(media, size, color, hoverColor=$color, bgColor=#fff)
+  {
+    float: right;
+    display: none;
+    height: $size;
+    width: $size;
+    content: " ";
+    background-color: $bgColor;
+    border: none;
+    cursor: pointer;
+    background-image: $icons.bgImageURI(menu, $size, $color);
+    $media {
+      display: block;
+    }
+    :hover, [selected] {
+      background-image: $icons.bgImageURI(menu, $size, $hoverColor);
+    }
+  }

@@ -34,10 +34,10 @@ function selectVerStyle(x, y) {
 
 // align : hcc (example)
 export function flex(align) {
-  hvxy := list($align);
-  hv := $hvxy[0]; // 'h' or 'v'
-  x := $hvxy[1]; // 'l', 'c' or 'r'
-  y := $hvxy[2]; // 't', 'c' or 'b'
+  hvxy = list($align);
+  hv = $hvxy[0]; // 'h' or 'v'
+  x = $hvxy[1]; // 'l', 'c' or 'r'
+  y = $hvxy[2]; // 't', 'c' or 'b'
 
   {display: flex} + ifelse(
     $hv == "h", selectHorStyle($x, $y), 

@@ -13,7 +13,7 @@ fi
 
 dir=$1
 
-echo "var allIconNames=["
+echo "const allIconNames=["
 
 files=`find ${dir} -name \*.svg | sort`
 for f in $files

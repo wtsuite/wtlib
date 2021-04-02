@@ -1,4 +1,4 @@
-export var allIconNames=[
+export const allIconNames=[
   abjad-arabic,
   abjad-hebrew,
   ab-testing,

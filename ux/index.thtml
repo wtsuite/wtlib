@@ -1,3 +1,5 @@
-export {carousel} from "carousel/carousel.thtml";
+export {carousel} from "carousel/carousel.thtml"
 
-export {loading, loading-style} from "loading/loading.thtml";
+export {loading, loading-style} from "loading/loading.thtml"
+
+export {hamburger-style} from "hamburger/hamburger.thtml"
