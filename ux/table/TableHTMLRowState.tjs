@@ -1,0 +1,65 @@
+import {TableRowState} from "TableRowState.tjs";
+import {SelectionMode} from "SelectionMode.tjs";
+
+export const SELECTED String = "selected"; 
+
+export class TableHTMLRowState extends TableRowState {
+  _thead HTMLElement;
+  _tbody HTMLElement;
+
+  constructor(thead HTMLElement, tbody HTMLElement, selectionMode SelectionMode = SelectionMode.spreadsheet) {
+    super(tbody.children.length, selectionMode);
+
+    this._thead = thead;
+    this._tbody = tbody;
+  }
+
+  select(i Int) {
+    super.select(i);
+    this._tbody.children[i].setAttribute(SELECTED, "");
+
+    if (this.countSelected() == this.nRows) {
+      this._thead.children[0].setAttribute(SELECTED, "");
+    } else {
+      this._thead.children[0].removeAttribute(SELECTED);
+    }
+  }
+
+  unselect(i Int) {
+    super.unselect(i);
+    this._tbody.children[i].removeAttribute(SELECTED);
+    this._thead.children[0].removeAttribute(SELECTED);
+  }
+
+  selectAll() {
+    this._thead.children[0].setAttribute(SELECTED, "");
+    for (i := 0; i < this.nRows; i++) {
+      this.select(i);
+    }
+    this._count = this.nRows;
+  }
+
+  selectNone() {
+    this._thead.children[0].removeAttribute(SELECTED);
+    for (i := 0; i < this.nRows; i++) {
+      this.unselect(i);
+    }
+    this._count = 0;
+  }
+
+  clickSelect(i Int, ctrl Boolean, shift Boolean) {
+    this._thead.children[0].removeAttribute(SELECTED);
+    super.clickSelect(i, ctrl, shift);
+
+    if (shift) {
+      // sync
+      for (i := 0; i < this.nRows; i++) {
+        if (this.selected(i)) {
+          this._tbody.children[i].setAttribute(SELECTED, "");
+        } else {
+          this._tbody.children[i].removeAttribute(SELECTED);
+        }
+      }
+    }
+  }
+}

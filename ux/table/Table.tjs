@@ -1,0 +1,250 @@
+import {SELECTED, TableHTMLRowState} from "TableHTMLRowState.tjs";
+import {targetWithin, isVisible} from "../ops.tjs";
+import {SelectionMode} from "SelectionMode.tjs";
+
+export type ClickCallbackType = (Int, Int, Boolean, Boolean);
+
+export function createTR(content []any, attr Object<String> = {}) HTMLElement {
+  tr := document.createElement("tr");
+
+  for (let c of content) {
+    td := document.createElement("td");
+
+    if (c instanceof String) {
+      td.innerHTML = c;
+    } else {
+      td.innerHTML = c.toString();
+    }
+
+    tr.appendChild(td);
+  }
+
+  for (let key in attr) {
+    tr.setAttribute(key, attr[key]);
+  }
+
+  return tr;
+}
+
+export class Table {
+  _table HTMLElement;
+  _thead HTMLElement;
+  _tbody HTMLElement;
+  _rowStates TableHTMLRowState;
+  _onchange ();
+  _selectionMode SelectionMode;
+
+  constructor(id String, config Object = {selectionMode: SelectionMode.spreadsheet}) {
+    this._table = document.getElementById(id);
+    this._thead = this._table.querySelector("thead");
+    this._tbody = this._table.querySelector("tbody");
+
+    this._selectionMode = config["selectionMode"];
+    if (Object.isUndefined(this._selectionMode)) {
+      this._selectionMode = SelectionMode.spreadsheet;
+    }
+
+    this._rowStates = null;
+
+    this._onchange = null;
+
+    // if you want to prevent some click events from remove the selection state you must stop its event propagation
+    window.addEventListener("click", (e Event) => {
+      if (!targetWithin(e.target, this._table) && isVisible(this._table)) {
+        this.selectNone();
+      }
+    });
+  }
+
+  get nRows() Int {
+    return this._tbody.children.length;
+  }
+
+  private clearRows() {
+    this._thead.children[0].removeAttribute("selected");
+
+    while (this._tbody.firstChild != null) {
+      this._tbody.removeChild(this._tbody.firstChild);
+    }
+  }
+
+  private addRowInternal(r Element) {
+    this._tbody.appendChild(r);
+  }
+
+  // add all rows at once so we can build the correct select state
+  set rows(arr []Element) {
+    this.clearRows();
+
+    for (let r of arr) {
+      this.addRowInternal(r);
+    }
+
+    this._rowStates = new TableHTMLRowState(this._thead, this._tbody, this._selectionMode);
+
+    this.notifyChange();
+  }
+
+  addRow(r Element) {
+    this.addRowInternal(r);
+
+    this._rowStates.addRow();
+
+    this.notifyChange();
+  }
+
+  replaceRow(newRow Element, oldRow Element) {
+    if (oldRow.getAttribute(SELECTED) == "") {
+      newRow.setAttribute(SELECTED, "");
+    }
+
+    this._tbody.replaceChild(newRow, oldRow);
+
+    this.notifyChange();
+  }
+
+  // insert before, negative index inserts at beginning, index larger than this._tbody.children inserts at end
+  insertRow(i Int, newRow Element) {
+    if (i < 0) {
+      this._tbody.insertBefore(newRow, this._tbody.children[0]);
+      this._rowStates.insertRow(0);
+      this.notifyChange();
+    } else if (i >= this._tbody.children.length) {
+      this.addRow(newRow);
+    } else {
+      this._tbody.insertBefore(newRow, this._tbody.children[i]);
+      this._rowStates.insertRow(i);
+      this.notifyChange();
+    }
+  }
+
+  getRow(i Int) Element {
+    return this._tbody.children[i];
+  }
+
+  removeRow(i Int) {
+    row := this.getRow(i);
+    this._tbody.removeChild(row);
+    this._rowStates.removeRow(i);
+
+    this.notifyChange();
+  }
+
+  // index of first row for which cond(row) == true
+  //  -1 if not found
+  findRow(cond (Element) => Boolean) Int {
+    for (i := 0; i < this._tbody.children.length; i++) {
+      row := this._tbody.children[i];
+
+      if (cond(row)) {
+        return i;
+      }
+    }
+
+    return -1;
+  }
+
+  select(rowI Int) {
+    this._rowStates.select(rowI);
+
+    this.notifyChange();
+  }
+
+  unselect(rowI Int) {
+    this._rowStates.unselect(rowI);
+
+    this.notifyChange();
+  }
+
+  selected(rowI Int) Boolean {
+    return this._rowStates.selected(rowI);
+  }
+
+  toggleSelected(rowI Int) {
+    this._rowStates.toggleSelected(rowI);
+
+    this.notifyChange();
+  }
+
+  selectAll() {
+    this._rowStates.selectAll();
+
+    this.notifyChange();
+  }
+
+  selectNone() {
+    this._rowStates.selectNone();
+
+    this.notifyChange();
+  }
+
+  subsetSelected() []Int {
+    selected := this._rowStates.subsetSelected(); // this is Uint32Array, which needs to be converted to regular array
+
+    result := [];
+    for (i := 0; i < selected.length; i++) {
+      result.push(selected[i]);
+    }
+
+    return result;
+  }
+
+  countSelected() Int {
+    return this._rowStates.countSelected();
+  }
+
+  private setClickCallback(clickType String, fn ClickCallbackType) {
+    this._tbody.addEventListener(clickType, (e MouseEvent) => {
+      cell := e.target;
+      colI := cell.cellIndex;
+      row := e.target.parentElement;
+      rowI := row.rowIndex - 1;
+
+      fn(rowI, colI, e.ctrlKey, e.shiftKey);
+    });
+
+    this._thead.addEventListener(clickType, (e MouseEvent) => {
+      colI := e.target.cellIndex;
+      if (colI == null) {
+        colI = e.target.parentElement.cellIndex;
+      }
+
+      fn(-1, colI, e.ctrlKey, e.shiftKey);
+    });
+  }
+
+  set onclick(fn function) {
+    // update select state, then call callback
+    this.setClickCallback("click", (rowI Int, colI Int, ctrl Boolean, shift Boolean) => {
+      switch (this._selectionMode) {
+        case SelectionMode.spreadsheet:
+          this._rowStates.clickSelect(rowI, ctrl, shift);
+          this.notifyChange();
+
+          break;
+        case SelectionMode.checkbox:
+          if (colI == 0) {
+            this._rowStates.clickSelect(rowI, ctrl, shift);
+            this.notifyChange();
+          }
+          break;
+      }
+
+      fn(rowI, colI, ctrl, shift);
+    });
+  }
+
+  set ondblclick(fn ClickCallbackType) {
+    this.setClickCallback("dblclick", fn);
+  }
+
+  set onchange(fn ()) {
+    this._onchange = fn;
+  }
+
+  private notifyChange() {
+    if (this._onchange != null) {
+      this._onchange();
+    }
+  }
+}

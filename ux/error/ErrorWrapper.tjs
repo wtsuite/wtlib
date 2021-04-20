@@ -1,0 +1,21 @@
+export class ErrorWrapper {
+  _element HTMLElement;
+
+  constructor(anchor HTMLElement) {
+    this._element = document.createElement("div");
+    this._element.setAttribute("class", "error-wrapper");
+
+    anchorParent := anchor.parentElement;
+
+    anchorParent.replaceChild(this._element, anchor);
+    this._element.appendChild(anchor);
+  }
+
+  set error(s String) {
+    if (s == "" || s == null) {
+      this._element.removeAttribute("error");
+    } else {
+      this._element.setAttribute("error", s);
+    }
+  }
+}

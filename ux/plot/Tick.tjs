@@ -28,8 +28,8 @@ export class Tick {
     return !this._isMinor;
   }
 
-  static suggestTicks(start Number, stop Number, width Number, spacing Number) Array<Tick> {
-    let ticks Array<Tick> = new Array();
+  static suggestTicks(start Number, stop Number, width Number, spacing Number) []Tick {
+    let ticks []Tick = new Array();
 
     delta := smartRound((stop - start)/(width/spacing));
 

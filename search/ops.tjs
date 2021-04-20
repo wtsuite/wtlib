@@ -1,4 +1,4 @@
-export function sanitizeQuery(q_ String) Array<String> {
+export function sanitizeQuery(q_ String) []String {
   q := q_.replace(new RegExp("<[/]?[a-z]*[/]?>", "g"), "");
   q = q.replace(new RegExp('&nbsp;', "g"), " ");
   q = q.replace(new RegExp('[\\,;:\]', "g"), " ");
@@ -27,10 +27,10 @@ export function sanitizeQuery(q_ String) Array<String> {
 }
 
 // highlight parts of txt with <b> tags
-export function highlightQuery(txt String, keys Array<String>) String {
+export function highlightQuery(txt String, keys []String) String {
   txt = txt.replace(new RegExp('&nbsp;', "g"), "      ");
 
-  var rawRanges Array<Array<Int>> = [];
+  var rawRanges [][]Int = [];
   for (let key of keys) {
     re := new RegExp(key, "gi"); // case insensitive match
 
@@ -53,12 +53,12 @@ export function highlightQuery(txt String, keys Array<String>) String {
     return txt;
   }
 
-  rawRanges.sort(function(a Array<Int>, b Array<Int>) Int {
+  rawRanges.sort(function(a []Int, b []Int) Int {
     return a[0]-b[0];
   });
 
   // merge overlapping ranges
-  let ranges Array<Array<Int>> = [];
+  let ranges [][]Int = [];
 
   start := rawRanges[0][0];
   stop := rawRanges[0][1];
@@ -74,7 +74,7 @@ export function highlightQuery(txt String, keys Array<String>) String {
 
   ranges.push([start, rawRanges[n-1][1]]);
 
-  let highlightedTxt Array<String> = [];
+  let highlightedTxt []String = [];
 
   prev := 0;
   for (i := 0; i < ranges.length; i++) {

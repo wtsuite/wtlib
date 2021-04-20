@@ -1,0 +1,15 @@
+import {AbstractOption} from "AbstractOption.tjs";
+
+export class Flag extends AbstractOption {
+  _callback ();
+
+  constructor(short String, long String, info String, callback ()) {
+    super(short, long, info);
+
+    this._callback = callback;
+  }
+
+  handle() {
+    this._callback();
+  }
+}

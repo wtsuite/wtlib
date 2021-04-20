@@ -1,0 +1,15 @@
+import {AbstractOption} from "AbstractOption.tjs";
+
+export class Option extends AbstractOption {
+  _callback (String);
+
+  constructor(short String, long String, info String, callback (String)) {
+    super(short, long, info);
+
+    this._callback = callback;
+  }
+
+  handle(arg String) {
+    this._callback(arg);
+  }
+}

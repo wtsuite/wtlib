@@ -1,0 +1,111 @@
+// returns the positional arguments
+function checkFlagsAndOptions(flags Object<()>, options Object<(String)>) {
+  for (let k in flags) {
+    if (!k.startsWith("-")) {
+      throw new Error("flag " + k + " doesn't begin with dash");
+    }
+
+    if ((typeof flags[k]) != "function") {
+      throw new Error("flag callback is not a function");
+    }
+
+    if (!Object.isUndefined(options[k])) {
+      throw new Error("flag " + k + " is also an option");
+    }
+  }
+
+  for (let k in options) {
+    if (!k.startsWith("-")) {
+      throw new Error("flag " + k + " doesn't begin with dash");
+    }
+
+    if ((typeof options[k]) != "function") {
+      throw new Error("option callback is not a function");
+    }
+
+    if (!Object.isUndefined(flags[k])) {
+      throw new Error("option " + k + " is also a flag");
+    }
+  }
+}
+
+export function parseOptions(args []String, flags Object<()>, options Object<(String)>) []String {
+  checkFlagsAndOptions(flags, options);
+
+  let positional []String = [];
+
+  isFlag := function(s String) Boolean {
+    return !Object.isUndefined(flags[s]);
+  };
+
+  isOption := function(s String) Boolean {
+    return !Object.isUndefined(options[s]);
+  };
+
+  for (i := 0; i < args.length; i++) {
+    arg := args[i];
+    last := i == args.length - 1;
+
+    if (arg == "-" || arg == "--") {
+      positional = positional.concat(args.slice(i));
+      break;
+    } else if (!arg.startsWith("-")) {
+      positional.push(arg);
+    } else {
+      long :=  arg.startsWith("--");
+
+      if (long) {
+        if (isFlag(arg)) {
+          flags[arg]();
+        } else if (isOption(arg)) {
+          if (last) {
+            throw new Error("expected option after " + arg);
+          }
+
+          i++;
+          options[arg](args[i]);
+        } else {
+          throw new Error(arg + " is not a valid option");
+        }
+      } else {
+        first := "-" + arg[1];
+
+        if (isFlag(first)) {
+          console.log(first, flags);
+          flags[first]();
+
+          for (j := 2; j < arg.length; j++) {
+            key := "-" + arg.charAt(j);
+            if (!isFlag(key)) {
+              throw new Error(key + " is not a flag (in " + arg + ")");
+            }
+
+            flags[key]();
+          }
+        } else if (isOption(first)) {
+          if (arg.length > 2) {
+            if (arg[2] == "=") {
+              if (arg.length == 2) {
+                throw new Error("expected more after " + arg);
+              }
+              options[first](arg.slice(3));
+            } else {
+              options[first](arg.slice(2));
+            }
+          } else {
+            if (i == args.length - 1) {
+              throw new Error("expected option after " + arg);
+            }
+
+            i++;
+            options[first](args[i]);
+          }
+        } else {
+          throw new Error(arg + " is not a valid option");
+        }
+      }
+    }
+  }
+
+  return positional;
+}

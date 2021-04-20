@@ -11,7 +11,7 @@ export class Vec4 {
     this._w = w;
   }
 
-  static fromArray(arr Array<Number>) Vec4 {
+  static fromArray(arr []Number) Vec4 {
     if (arr.length != 4) {
       throw new Error("Error: expected 4 entries");
     }

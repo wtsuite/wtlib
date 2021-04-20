@@ -1,0 +1,38 @@
+import {StringSelect} from "StringSelect.tjs";
+
+export class IntSelect extends StringSelect {
+  constructor(id String, cfg Object = {errorWrapper: false}) {
+    super(id, cfg);
+  }
+
+  set options(arr []Int) {
+    super.options = arr.map((i Int) String => {return i.toString()});
+  }
+
+  get value() Int {
+    s := super.value;
+
+    if (s == "" || s == null) {
+      return null;
+    } else {
+      i := Number.parseInt(s);
+      if (Number.isNaN(i)) { 
+        throw new Error("internal error");
+      }
+
+      return i;
+    }
+  }
+
+  set value(i Int) {
+    if (i == null) {
+      super.value = "";
+    } else {
+      super.value = i.toString();
+    }
+  }
+
+  get options() []Int {
+    return super.options.map((s String) Int => {return Number.parseInt(s)});
+  }
+}

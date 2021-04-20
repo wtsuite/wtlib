@@ -1,5 +1,7 @@
+import {PageData} from "PageData.tjs";
+
 export class SearchIndex{
-  _onready Array<function<void>>;
+  _onready []();
   _data any;
 
   // opt not yet used
@@ -23,7 +25,7 @@ export class SearchIndex{
     });
   }
 
-  page(i Int) Object<url: String, title: String, content: Array<String>> {
+  page(i Int) PageData {
     return this._data.pages[i];
   }
 
@@ -97,12 +99,12 @@ export class SearchIndex{
     return s;
   }
 
-  private initFuzzy(limit Int) Array<Set<Int>> {
+  private initFuzzy(limit Int) []Set<Int> {
     if (limit < 0) {
       throw new Error('fuzzy limit must be positive');
     }
 
-    let sets Array<Set<Int>> = new Array(limit+1);
+    let sets []Set<Int> = new Array(limit+1);
 
     for (i := 0; i <= limit; i++){
       sets[i] = new Set();
@@ -111,7 +113,7 @@ export class SearchIndex{
     return sets;
   }
 
-  private fuzzyInternal(data any, query String, r any, t, limit Int, sw Boolean, sets Array<Set<Int>>) {
+  private fuzzyInternal(data any, query String, r any, t, limit Int, sw Boolean, sets []Set<Int>) {
     n := query.length;
     //d := t.length;
     i := t.length;
@@ -154,7 +156,7 @@ export class SearchIndex{
   }
 
   // limit is typically 2 or 3
-  fuzzy(query String, limit Int) Array<Set<Int>> {
+  fuzzy(query String, limit Int) []Set<Int> {
     sets := this.initFuzzy(limit);
 
     this.fuzzyInternal(this._data.index, query, null, '', limit, false, sets);
@@ -162,7 +164,7 @@ export class SearchIndex{
     return sets;
   }
 
-  fuzzyPrefix(query String, limit Int) Array<Set<Int>> {
+  fuzzyPrefix(query String, limit Int) []Set<Int> {
     sets := this.initFuzzy(limit);
 
     this.fuzzyInternal(this._data.index, query, null, '', limit, true, sets);
@@ -170,7 +172,7 @@ export class SearchIndex{
     return sets;
   }
 
-  fuzzySuffix(query String, limit Int) Array<Set<Int>> {
+  fuzzySuffix(query String, limit Int) []Set<Int> {
     sets := this.initFuzzy(limit);
 
     this.fuzzyInternal(this._data.partial, query, null, '', limit, false, sets);
@@ -178,7 +180,7 @@ export class SearchIndex{
     return sets;
   }
 
-  fuzzySubstring(query String, limit Int) Array<Set<Int>> {
+  fuzzySubstring(query String, limit Int) []Set<Int> {
     sets := this.initFuzzy(limit);
 
     this.fuzzyInternal(this._data.partial, query, null, '', limit, true, sets);
@@ -186,7 +188,7 @@ export class SearchIndex{
     return sets;
   }
 
-  set onready(fn function<void>) {
+  set onready(fn ()) {
     if(this.page(0) != null){
       fn();
     }else{

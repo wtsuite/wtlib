@@ -15,10 +15,10 @@ function determineFuzzyness(key String) Int {
 }
 
 // returns sorted list of pages
-export function searchPages(si SearchIndex, keys Array<String>, lastPrefix Boolean = false) Promise<Array<Int>> {
+export function searchPages(si SearchIndex, keys []String, lastPrefix Boolean = false) Promise<[]Int> {
   nKeys := keys.length;
 
-  return new Promise(function(resolve function<Array<Int>, void>, reject function<Error, void>) {
+  return new Promise(function(resolve ([]Int), reject (Error)) {
     si.onready = function() {
       ranking := new Map(); // page index -> PageScore
 
@@ -28,7 +28,7 @@ export function searchPages(si SearchIndex, keys Array<String>, lastPrefix Boole
         fuzzyness := determineFuzzyness(key);
 
         if (!si.ignore(key)) {
-          let groups Array<Set<Int>>;
+          let groups []Set<Int>;
           if (i==nKeys-1 && lastPrefix) {
             groups = si.fuzzyPrefix(key, fuzzyness);
           } else {

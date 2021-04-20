@@ -8,6 +8,23 @@ export function bgImageURI(icon, height, color) {
   svg-uri(factory, {
     icon: $icon, 
     height: $height, 
-    style: ifelse(iscolor($color), {fill: $color}, $color), 
+    style: ifelse(isdict($color), $color, {fill: $color}), 
+  })
+}
+
+
+export function bgImageStyle(icon, height, color, hoverColor = null, disabledColor = null) {
+  {
+    background-image: $bgImageURI($icon, $height, $color),
+  } + ($hoverColor !! {
+    cursor: pointer,
+    ":hover": {
+      background-image: $bgImageURI($icon, $height, $hoverColor),
+    }
+  }) + ($disabledColor !! {
+    "[disabled]": {
+      cursor: unset,
+      background-image: $bgImageURI($icon, $height, $disabledColor),
+    }
   })
 }

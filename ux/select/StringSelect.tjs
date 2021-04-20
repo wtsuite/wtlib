@@ -1,49 +1,52 @@
+import {clearChildren} from "../ops.tjs";
+import {ErrorWrapper} from "../error/ErrorWrapper.tjs";
+
 export class StringSelect {
-  _collection HTMLSelectElement;
-  _onselect function<Int, void>;
+  _select HTMLSelectElement;
+  _wrapper ErrorWrapper;
+  _onselect (Int);
 
-  constructor(id String) {
-    this._collection = cast(document.getElementById(id), HTMLSelectElement);
+  constructor(id String, cfg Object = {errorWrapper: false}) {
+    this._select = cast(document.getElementById(id), HTMLSelectElement);
     this._onselect = null;
+    this._wrapper = cfg["errorWrapper"] ? new ErrorWrapper(this._select) : null;
 
-    this._collection.addEventListener("change", (_) => {
+    this._select.addEventListener("change", (_) => {
       if (this._onselect != null) {
-        this._onselect(this._collection.selectedIndex);
+        this._onselect(this._select.selectedIndex);
       }
     });
 
-    if (this._collection.children.length == 0) {
+    if (this._select.children.length == 0) {
       this.disable();
     }
   }
 
+  get element() HTMLSelectElement {
+    return this._select;
+  }
+
   disable() {
-    this._collection.setAttribute("disabled", "");
+    this._select.setAttribute("disabled", "");
   }
 
   enable() {
-    this._collection.removeAttribute("disabled");
+    this._select.removeAttribute("disabled");
   }
 
-  private clear() {
-    while (this._collection.firstChild != null) {
-      this._collection.removeChild(this._collection.firstChild);
-    }
-  }
-
-  set options(arr Array<String>) {
+  set options(arr []String) {
     //  clear the previous
-    this.clear();
+    clearChildren(this._select);
 
     for (let opt of arr) {
       option := document.createElement("option");
       option.innerHTML = opt;
       option.setAttribute("value", opt);
 
-      this._collection.appendChild(option);
+      this._select.appendChild(option);
     }
 
-    this._collection.selectedIndex = -1;
+    this._select.selectedIndex = -1;
 
     if (arr.length == 0) {
       this.disable();
@@ -53,49 +56,57 @@ export class StringSelect {
   }
 
   get index() Int {
-    return this._collection.selectedIndex;
+    return this._select.selectedIndex;
   }
 
   set index(i Int) {
-    this._collection.selectedIndex = i;
+    this._select.selectedIndex = i;
   }
 
   get value() String {
-    return this._collection.value;//children[this.index].innerHTML;
+    return this._select.value;//children[this.index].innerHTML;
   }
 
   // only when there is an exact match
   set value(s String) {
-    for (i := 0; i < this.length; i++) {
-      if (this._collection.children[i].getAttribute("value") == s) {
-        this.index = i;
-        return;
+    if (s == null) {
+      this.index = -1;
+    } else {
+      for (i := 0; i < this.length; i++) {
+        if (this._select.children[i].getAttribute("value") == s) {
+          this.index = i;
+          return;
+        }
       }
     }
   }
 
   get length() Int {
-    return this._collection.children.length;
+    return this._select.children.length;
   }
 
-  get options() Array<String> {
+  get options() []String {
     n := this.length;
 
-    let arr Array<String> = new Array(n);
+    let arr []String = new Array(n);
 
     for (i := 0; i < n; i++) {
-      item := this._collection.children[i];
+      item := this._select.children[i];
       arr[i] = item.getAttribute("value");
     }
 
     return arr;
   }
 
-  set onselect(fn function<Int, void>) {
+  set onselect(fn (Int)) {
     this._onselect = fn;
   }
 
   set error(s String) {
-    this._collection.setCustomValidity(s);
+    this._select.setCustomValidity(s);
+
+    if (this._wrapper != null) {
+      this._wrapper.error = s;
+    }
   }
 }

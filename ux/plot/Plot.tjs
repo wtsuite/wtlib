@@ -19,9 +19,9 @@ export class Plot {
   _rightUserMargin Number; // in px
   _bottomUserMargin Number; // in px
 
-  _xTickFormat function<Number, String>;
-  _yTickFormat function<Number, String>;
-  _y2TickFormat function<Number, String>;
+  _xTickFormat (Number) => String;
+  _yTickFormat (Number) => String;
+  _y2TickFormat (Number) => String;
   _boxStrokeWidth Number; // in px
   _boxColor String;
   _majorStrokeWidth Number; // in px
@@ -43,18 +43,18 @@ export class Plot {
   _xLabelColor String;
   _yLabelColor String;
   _y2LabelColor String;
-  _xUserLim Tuple<Number, Number>; // null if auto
-  _yUserLim Tuple<Number, Number>; // null if auto
-  _y2UserLim Tuple<Number, Number>; // null if auto
-  _xLim Tuple<Number, Number>;
-  _yLim Tuple<Number, Number>; 
-  _y2Lim Tuple<Number, Number>;
-  _xTicks Array<Tick>;
-  _yTicks Array<Tick>;
+  _xUserLim [Number, Number]; // null if auto
+  _yUserLim [Number, Number]; // null if auto
+  _y2UserLim [Number, Number]; // null if auto
+  _xLim [Number, Number];
+  _yLim [Number, Number]; 
+  _y2Lim [Number, Number];
+  _xTicks []Tick;
+  _yTicks []Tick;
 
   // collections represent the serie etc.
-  _collections Array<Collection>;
-  _y2Collections Array<Collection>;
+  _collections []Collection;
+  _y2Collections []Collection;
 
   constructor(id String, ctx PlotContext = null) {
     this._canvas = cast(document.getElementById(id), HTMLCanvasElement);
@@ -158,31 +158,31 @@ export class Plot {
     this._y2LabelColor = color;
   }
 
-  set xTickFormat(fn function<Number, String>) {
+  set xTickFormat(fn (Number) => String) {
     this._xTickFormat = fn;
   }
 
-  set yTickFormat(fn function<Number, String>) {
+  set yTickFormat(fn (Number) => String) {
     this._yTickFormat = fn;
   }
 
-  set y2TickFormat(fn function<Number, String>) {
+  set y2TickFormat(fn (Number) => String) {
     this._y2TickFormat = fn;
   }
 
-  get xLim() Tuple<Number, Number> {
+  get xLim() [Number, Number] {
     return this._xLim == null ? this._xUserLim : this._xLim;
   }
 
-  get yLim() Tuple<Number, Number> {
+  get yLim() [Number, Number] {
     return this._yLim == null ? this._yUserLim : this._yLim;
   }
 
-  set xLim(lim Tuple<Number, Number>) {
+  set xLim(lim [Number, Number]) {
     this._xUserLim = lim;
   }
 
-  set yLim(lim Tuple<Number, Number>) {
+  set yLim(lim [Number, Number]) {
     this._yUserLim = lim;
   }
 
@@ -217,7 +217,7 @@ export class Plot {
 
   private syncXLimits() {
     if (this._collections.length + this._y2Collections.length == 0) {
-      this._xLim = new Tuple(0, 1);
+      this._xLim = [0, 1];
     } else {
       if (this._xUserLim != null) {
         this._xLim = this._xUserLim;
@@ -239,14 +239,14 @@ export class Plot {
           xMax = Math.max(xBounds[1], xMax);
         }
 
-        this._xLim = new Tuple(xMin, xMax);
+        this._xLim = [xMin, xMax];
       }
     }
   }
 
   private syncYLimits() {
     if (this._collections.length == 0) {
-      this._yLim = new Tuple(0, 1);
+      this._yLim = [0, 1];
     } else {
       if (this._yUserLim != null) {
         this._yLim = this._yUserLim;
@@ -261,7 +261,7 @@ export class Plot {
           yMax = Math.max(yBounds[1], yMax);
         }
 
-        this._yLim = new Tuple(yMin, yMax);
+        this._yLim = [yMin, yMax];
       }
     }
   }
@@ -283,7 +283,7 @@ export class Plot {
           yMax = Math.max(yBounds[1], yMax);
         }
 
-        this._y2Lim = new Tuple(yMin, yMax);
+        this._y2Lim = [yMin, yMax];
       }
     }
   }

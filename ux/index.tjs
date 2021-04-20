@@ -9,7 +9,21 @@ export {LineCollection} from "plot/LineCollection.tjs";
 export {PaddingCollection} from "plot/PaddingCollection.tjs";
 
 export {StringSelect} from "select/StringSelect.tjs";
+export {IntSelect} from "select/IntSelect.tjs";
 
 export {Tabs} from "tabs/Tabs.tjs";
 
 export {Hamburger} from "hamburger/Hamburger.tjs";
+
+export {SelectionMode} from "table/SelectionMode.tjs";
+export {Table, createTR} from "table/Table.tjs";
+
+export {Button} from "button/Button.tjs";
+export {ExportButton} from "button/ExportButton.tjs";
+
+export {OkModal} from "modal/OkModal.tjs";
+export {YesNoModal} from "modal/YesNoModal.tjs";
+
+export {ErrorWrapper} from "error/ErrorWrapper.tjs";
+
+export {clearChildren, wait} from "ops.tjs";

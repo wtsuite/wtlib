@@ -1,0 +1,175 @@
+import {Button} from "../button/Button.tjs";
+import {getBodyScale} from "../ops.tjs";
+
+const scrollingKeys Set<String> = new Set();
+
+scrollingKeys.add("ArrowUp");
+scrollingKeys.add("ArrowDown");
+scrollingKeys.add("PageDown");
+scrollingKeys.add("PageUp");
+
+export class Modal {
+  _element           HTMLElement;
+  _content           HTMLElement;
+  _buttons           HTMLElement;
+  _cloak             HTMLElement;
+  _resolve           (any);
+  _reject            (Error);
+  _visible           Boolean;
+  _dragging          Boolean;
+  _dragStartMouseX   Number;
+  _dragStartMouseY   Number;
+  _dragStartElementX Number;
+  _dragStartElementY Number;
+  
+  _draggable Boolean;
+  _required  Boolean;
+
+  constructor(id String) {
+    this._element = document.getElementById(id);
+    this._content = this._element.querySelector(".modal-content");
+    this._buttons = this._element.querySelector(".modal-buttons");
+    this._cloak = document.getElementById("non-modal-cloak");
+
+    this._resolve = null;
+    this._reject = null; 
+
+    this._visible = false; // faster than checking getAttribute on every scroll event
+    this._dragging = false;
+
+    this._dragStartMouseX = null;
+    this._dragStartMouseY = null;
+    this._dragStartElementX = null;
+    this._dragStartElementY = null;
+
+    this._draggable = true;
+    this._required = false;
+
+    // only prevent things that can trigger accidental scrolling/background form filling
+    // blocking the scrollbar entirely is unnecessary
+    window.addEventListener("keydown", (e KeyboardEvent) => {
+      // by the time the event has bubbled here it should already have been handled by the form
+      if (this._visible && scrollingKeys.has(e.key)) {
+        e.preventDefault();
+      }
+    });
+
+    window.addEventListener("touchmove", (e Event) => {
+      if (this._visible) {
+        e.preventDefault();
+      }
+    });
+
+    window.addEventListener("wheel", (e Event) => {
+      if (this._visible) {
+        e.preventDefault();
+      }
+    });
+
+    this._cloak.addEventListener("click", (_ Event) => {
+      if (this._visible && !this._required) {
+        this.close();
+      }
+    });
+
+    this._element.addEventListener("mousedown", (e MouseEvent) => {
+      if (this._visible && e.target.tagName == "DIV" && this._draggable) {
+        this._dragging = true;
+        this._dragStartMouseX = e.clientX;
+        this._dragStartMouseY = e.clientY;
+
+        rect := this._element.getBoundingClientRect();
+        this._dragStartElementX = rect.left;
+        this._dragStartElementY = rect.top;
+      }
+    });
+
+    window.addEventListener("mousemove", (e MouseEvent) => {
+      if (this._visible && this._dragging && this._draggable) {
+        left := this._dragStartElementX + (e.clientX - this._dragStartMouseX);
+        top := this._dragStartElementY + (e.clientY - this._dragStartMouseY) + 0.5*this._element.getBoundingClientRect().height;
+
+        bodyScale := getBodyScale();
+        this._element.style.left = (left/bodyScale).toString() + "px";
+        this._element.style.top = (top/bodyScale).toString() + "px";
+
+        this.boundElement();
+
+        e.stopPropagation();
+        e.preventDefault();
+      }
+    });
+
+    window.addEventListener("mouseup", (e MouseEvent) => {
+      this._dragging = false;
+    });
+
+    window.addEventListener("resize", (_ Event) => {
+      if (this._visible) {
+        this.boundElement();
+      }
+    });
+  }
+
+  set draggable(b Boolean) {
+    this._draggable = b;
+  }
+
+  set required(b Boolean) {
+    this._required = b;
+  }
+
+  private show() {
+    // setting the modal attribute displays the cloak
+    this._element.setAttribute("show", "");
+    this._cloak.setAttribute("show", "");
+
+    this._visible = true;
+
+    bodyScale := getBodyScale();
+    bodyTop := document.body.getBoundingClientRect().top;
+    // horizontal scrolling is usually disabled, so no need to set the left/right (stays 50%)
+    this._element.style.top = ((0.5*window.innerHeight-bodyTop)/bodyScale + bodyTop).toString() + "px";
+  }
+
+  private hide() {
+    this._element.removeAttribute("show");
+    this._cloak.removeAttribute("show");
+
+    this._visible = false;
+
+    this._element.dispatchEvent(new Event('closemodal', {bubbles: true}));
+  }
+
+  close(arg any = null) {
+    this._element.style.removeProperty("left");
+    this._element.style.right = "50%";
+    this._element.style.top = "50%";
+    this.hide();
+    if (this._resolve != null) {
+      this._resolve(arg);
+    }
+  }
+
+  private boundElement() {
+    rect := this._element.getBoundingClientRect();
+
+    if (rect.width >= document.documentElement.clientWidth) {
+      this._element.style.removeProperty("left");
+      this._element.style.right = "50%"; // default centered behaviour (css adapts to small screens)
+    } else if (rect.left < 0) {
+      this._element.style.left = "0px";
+    } else if (rect.right > document.documentElement.clientWidth) {
+      this._element.style.left = (document.documentElement.clientWidth - rect.width).toString() + "px";
+    }
+
+
+    if (rect.height >= window.innerHeight) {
+      this._element.style.top = "50%"; // default centered behaviour (css adapts to small screens)
+    } else if (rect.top < 0) {
+      this._element.style.top = (0.5*rect.height).toString() + "px";
+    } else if (rect.bottom > window.innerHeight) {
+      this._element.style.top = (window.innerHeight - 0.5*rect.height).toString() + "px";
+    }
+  }
+}

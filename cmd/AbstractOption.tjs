@@ -1,0 +1,35 @@
+export class AbstractOption {
+  _short String;
+  _long String;
+  _info String;
+
+  constructor(short String, long String, info String) {
+    if (short == "" && long == "") {
+      throw new Error("either short or long must be set");
+    }
+
+    this._short = short;
+    this._long = long;
+    this._info = info;
+  }
+
+  get name() String {
+    if (this._short != "") {
+      return this._short;
+    } else {
+      return this._long;
+    }
+  }
+
+  get short() String {
+    return this._short;
+  }
+
+  get long() String {
+    return this._long;
+  }
+
+  get info() String {
+    return this._info;
+  }
+}

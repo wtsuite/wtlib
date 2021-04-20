@@ -1,0 +1,57 @@
+import {Widget} from "../Widget.tjs";
+
+
+export class Button extends Widget {
+  // default should be 
+  constructor(id String, cls String = null) {
+    super(id);
+
+    if (cls != null) {
+      if (this._element == null) {
+        this._element = document.createElement("button");
+      }
+      this._element.setAttribute("class", cls);
+    }
+  }
+
+  set onclick(fn (Event)) {
+    this._element.addEventListener("click", (e Event) => {
+      if (this.enabled) {
+        fn(e);
+      }
+    });
+  }
+
+  // use this to prevent loss of focus
+  set onmousedown(fn (Event)) {
+    this._element.addEventListener("mousedown", (e Event) => {
+      if (this.enabled) {
+        fn(e);
+      }
+    });
+  }
+
+  set href(s String) {
+    if (s == null || s == "") {
+      this._element.removeAttribute("href");
+    } else {
+      this._element.setAttribute("href", s);
+    }
+  }
+
+  static new(innerHTML String, cl String = "", type String = "button", enabled Boolean = true) Button {
+    b := new Button(""); // _element stays null, which we can set now
+
+    e := document.createElement(type);
+    e.setAttribute("class", cl);
+    e.innerHTML = innerHTML;
+
+    b._element = e;
+
+    if (!enabled) {
+      b.disable();
+    }
+
+    return b;
+  }
+}

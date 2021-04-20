@@ -15,15 +15,15 @@ export class PaddingCollection implements Collection {
     this._yMax = yMax;
   }
 
-  get xBounds() Tuple<Number, Number> {
-    return new Tuple(this._xMin, this._xMax);
+  get xBounds() [Number, Number] {
+    return [this._xMin, this._xMax];
   }
 
-  get yBounds() Tuple<Number, Number> {
-    return new Tuple(this._yMin, this._yMax);
+  get yBounds() [Number, Number] {
+    return [this._yMin, this._yMax];
   }
 
-  draw(xPos function<Number, Number>, yPos function<Number, Number>, ctx PlotContext) {
+  draw(xPos (Number) => Number, yPos (Number) => Number, ctx PlotContext) {
     // doesn't do anything
   }
 }

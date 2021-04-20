@@ -1,0 +1,54 @@
+// make sure to include the modal element in your html
+import {Button} from "../button/Button.tjs";
+import {Modal} from "Modal.tjs";
+import {clearChildren} from "../ops.tjs";
+
+export class YesNoModal extends Modal {
+  _inner HTMLElement; // set during prompt
+  _yesButton Button;
+  _noButton Button;
+
+  constructor() {
+    super("modal");
+
+    this._inner = null;
+
+    this._yesButton = Button.new("Yes", "modal-yes");
+    this._yesButton.onclick = (_ Event) => {
+      this.close(true);
+    };
+
+    this._noButton = Button.new("No", "modal-no");
+    this._noButton.onclick = (_ Event) => {
+      this.close(false);
+    };
+  }
+
+  prompt(inner HTMLElement) Promise<any> {
+    this._inner = inner;
+
+    clearChildren(this._content);
+    clearChildren(this._buttons);
+
+    this._content.appendChild(this._inner);
+    this._buttons.appendChild(this._yesButton.element);
+    this._buttons.appendChild(this._noButton.element);
+
+    this.show();
+
+    return new Promise((resolve (any), reject (Error)) => {
+      this._resolve = resolve;
+      this._reject = reject;
+    });
+  }
+
+  close(b Boolean) {
+    this._content.removeChild(this._inner);
+    this._buttons.removeChild(this._yesButton.element);
+    this._buttons.removeChild(this._noButton.element);
+
+    this._inner = null;
+
+    super.close(b);
+  }
+}

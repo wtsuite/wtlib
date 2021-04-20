@@ -1,6 +1,6 @@
 export class List {
   _container HTMLElement;
-  _onselect function<Int, void>;
+  _onselect (Int);
 
   constructor(id String) {
     this._container = document.getElementById(id);
@@ -26,11 +26,11 @@ export class List {
     }
   }
 
-  set onselect(fn function<Int, void>) {
+  set onselect(fn (Int)) {
     this._onselect = fn;
   }
 
-  update(lst Array<String>) {
+  update(lst []String) {
     this.clear();
 
     for (let item of lst) {

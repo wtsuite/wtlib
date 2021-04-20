@@ -1,0 +1,142 @@
+import {Flag} from "Flag.tjs";
+import {Option} from "Option.tjs";
+
+export class OptionParser {
+  _flags   Object<Flag>;
+  _options Object<Option>;
+
+  constructor(flags []Flag, options []Option) {
+    this._flags = {};
+    this._options = {};
+
+    flags.forEach((f Flag) => {
+      if (f.short != "") {
+        this.registerFlag(f.short, f);
+      } 
+
+      if (f.long != "") {
+        this.registerFlag(f.long, f);
+      }
+    });
+
+    options.forEach((o Option) => {
+      if (o.short != "") {
+        this.registerOption(o.short, o);
+      } 
+
+      if (o.long != "") {
+        this.registerOption(o.long, o);
+      }
+    });
+  }
+
+  private registerFlag(key String, flag Flag) {
+    if (!(Object.isUndefined(this._flags[key]) && Object.isUndefined(this._options[key]))) {
+      throw new Error("option " + key + " already registered");
+    }
+
+    this._flags[key] = flag;
+  }
+
+  private registerOption(key String, opt Option) {
+    if (!(Object.isUndefined(this._flags[key]) && Object.isUndefined(this._options[key]))) {
+      throw new Error("option " + key + " already registered");
+    }
+
+    this._options[key] = opt;
+  }
+
+  private isFlag(key String) Boolean {
+    return !Object.isUndefined(this._flags[key]);
+  }
+
+  private isOption(key String) Boolean {
+    return !Object.isUndefined(this._options[key]);
+  }
+
+  parse(args []String) []String {
+    let pos []String = [];
+
+    for (i := 0; i < args.length; i++) {
+      arg := args[i];
+
+      if (arg == "-" || arg == "--") {
+        pos = pos.concat(args.slice(i));
+        break;
+      } else if (!arg.startsWith("-")) {
+        pos.push(arg);
+      } else {
+        if (arg.startsWith("--")) {
+          i = this.parseLong(args, i);
+        } else {
+          i = this.parseShort(args, i);
+        }
+      }
+    }
+
+    return pos;
+  }
+
+  private parseLong(args []String, i Int) Int {
+    last := i == args.length - 1;
+    arg := args[i];
+
+    if (this.isFlag(arg)) {
+      this._flags[arg].handle();
+      return i;
+    } else if (this.isOption(arg)) {
+      if (last) {
+        throw new Error("expected option after " + arg);
+      }
+
+      this._options[arg].handle(args[i+1]);
+      return i+1;
+    } else {
+      throw new Error(arg + " is not a valid option");
+    }
+  }
+
+  private parseShort(args []String, i Int) Int {
+    last := i == args.length - 1;
+    arg := args[i];
+
+    first := "-" + arg[1];
+
+    if (this.isFlag(first)) {
+      this._flags[first].handle();
+
+      for (j := 2; j < arg.length; j++) {
+        key := "-" + arg.charAt(j);
+        if (!this.isFlag(key)) {
+          throw new Error(key + " is not a flag (in " + arg + ")");
+        }
+
+        this._flags[key].handle();
+      }
+
+      return i;
+    } else if (this.isOption(first)) {
+      if (arg.length > 2) {
+        if (arg[2] == "=") {
+          if (arg.length == 2) {
+            throw new Error("expected more after " + arg);
+          }
+          this._options[first].handle(arg.slice(3));
+        } else {
+          this._options[first].handle(arg.slice(2));
+        }
+
+        return i;
+      } else {
+        if (last) {
+          throw new Error("expected option after " + arg);
+        }
+
+        this._options[first].handle(args[i+1]);
+        return i+1;
+      }
+    } else {
+      throw new Error(arg + " is not a valid option");
+    }
+  }
+}

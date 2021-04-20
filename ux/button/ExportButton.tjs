@@ -1,0 +1,30 @@
+import {Button} from "Button.tjs";
+
+export class ExportButton extends Button {
+  _link HTMLLinkElement;
+
+  constructor(id String) {
+    super(id);
+
+    this._link = document.createElement('a');
+    this._link.style.display = 'none';
+    document.body.appendChild(this._link);
+  }
+
+  set onclick(fn function) {
+    this._element.addEventListener("click", (e Event) => {
+      if (this.enabled) {
+        fn(e, (name String, dataURL String) => {
+          this.setNameAndDataURL(name, dataURL);
+        });
+      }
+    });
+  }
+
+  private setNameAndDataURL(name String, dataURL String) {
+    this._link.href = dataURL;
+    this._link.download = name;
+    this._link.click();
+    this._link.rel = "noopener";
+  }
+}

@@ -1,0 +1,46 @@
+// make sure to include the modal element in your html
+import {Button} from "../button/Button.tjs";
+import {Modal} from "Modal.tjs";
+import {clearChildren} from "../ops.tjs";
+
+export class OkModal extends Modal {
+  _inner HTMLElement; // set during prompt
+  _okButton Button;
+
+  constructor() {
+    super("modal");
+
+    this._inner = null;
+
+    this._okButton = Button.new("Ok", "modal-ok");
+    this._okButton.onclick = (_ Event) => {
+      this.close();
+    };
+  }
+
+  prompt(inner HTMLElement) Promise<any> {
+    this._inner = inner;
+
+    clearChildren(this._content);
+    clearChildren(this._buttons);
+
+    this._content.appendChild(this._inner);
+    this._buttons.appendChild(this._okButton.element);
+
+    this.show();
+
+    return new Promise((resolve (any), reject (Error)) => {
+      this._resolve = resolve;
+      this._reject = reject;
+    });
+  }
+
+  close() {
+    this._content.removeChild(this._inner);
+    this._buttons.removeChild(this._okButton.element);
+
+    this._inner = null;
+
+    super.close(null);
+  }
+}

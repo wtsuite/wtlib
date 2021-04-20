@@ -3,7 +3,7 @@ parameters(extension=null)
 // default factory
 export {iconfactory as factory}($extension) from "./factory.thtml"
 
-export {bgImageURI}($extension) from "./bgImage.thtml"
+export {bgImageURI, bgImageStyle}($extension) from "./bgImage.thtml"
 
 export {mdi-icon} from "./mdi-icon.thtml"
 

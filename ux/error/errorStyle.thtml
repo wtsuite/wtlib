@@ -1,0 +1,21 @@
+export style errorStyle(color=red, captionSize=1rem) 
+  .error-wrapper {
+    position: relative;
+
+    [error] {
+      > * {
+        box-shadow: 0px 0px 1px 1px $color;
+      }
+
+      ::after {
+        position: absolute;
+        bottom: -$captionSize;
+        height: $captionSize;
+        line-height: $captionSize;
+        font-size: $(0.8*$captionSize);
+        left: 0;
+        content: attr(error);
+        color: $color;
+      }
+    }
+  }

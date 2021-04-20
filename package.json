@@ -5,6 +5,7 @@
     "ux": "./ux/index.thtml"
   },
   "scriptModules": {
+    "cmd":    "./cmd/index.tjs",
     "easing": "./easing/index.tjs",
     "linalg": "./linalg/index.tjs",
     "search": "./search/index.tjs",

@@ -1,12 +1,12 @@
 export class Tabs {
-  _tabs Array<Tuple<HTMLElement, HTMLElement>>;
+  _tabs [][HTMLElement, HTMLElement];
   _active Int;
-  _onfocus function<Int, void>;
-  _onblur function<Int, void>;
+  _onfocus (Int);
+  _onblur (Int);
 
   // tabIDs: [[lip-id, tab-id], ...]
 
-  constructor(tabIDs Array<Array<String>>) {
+  constructor(tabIDs [][]String) {
     this._tabs = new Array();
     this._active = -1;
     this._onfocus = null;
@@ -25,7 +25,7 @@ export class Tabs {
         this.select(i);
       });
 
-      this._tabs.push(new Tuple(lip, tab));
+      this._tabs.push([lip, tab]);
     }
 
     this.select(0);
@@ -55,11 +55,11 @@ export class Tabs {
     this._active = i;
   }
 
-  set onfocus(fn function<Int, void>) {
+  set onfocus(fn (Int)) {
     this._onfocus = fn;
   }
 
-  set onblur(fn function<Int, void>) {
+  set onblur(fn (Int)) {
     this._onblur = fn;
   }
 }

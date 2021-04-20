@@ -2,7 +2,7 @@ import {PlotContext} from "PlotContext.tjs";
 import {Collection} from "Collection.tjs";
 
 
-function dataBounds(data any) Tuple<Number, Number> {
+function dataBounds(data any) [Number, Number] {
   min := data.reduce(
     function(a Number, b Number) Number {return Math.min(a, b)}, 
     Number.MAX_VALUE);
@@ -11,7 +11,7 @@ function dataBounds(data any) Tuple<Number, Number> {
     function(a Number, b Number) Number {return Math.max(a, b)}, 
     -Number.MAX_VALUE);
 
-  return new Tuple(min, max);
+  return [min, max];
 }
 
 export class LineCollection implements Collection {
@@ -36,15 +36,15 @@ export class LineCollection implements Collection {
     this._color = color;
   }
 
-  get xBounds() Tuple<Number, Number> {
+  get xBounds() [Number, Number] {
     return dataBounds(this._x);
   }
 
-  get yBounds() Tuple<Number, Number> {
+  get yBounds() [Number, Number] {
     return dataBounds(this._y);
   }
 
-  draw(xPos function<Number, Number>, yPos function<Number, Number>, ctx PlotContext) {
+  draw(xPos (Number) => Number, yPos (Number) => Number, ctx PlotContext) {
     ctx.beginLine(this._width, this._color);
 
     ctx.moveTo(xPos(this._x[0]), yPos(this._y[0]));

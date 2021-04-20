@@ -1,0 +1,53 @@
+export function remove(e Element) {
+  e.parentNode.removeChild(e);
+}
+
+export function targetWithin(t HTMLElement, container HTMLElement) Boolean {
+  if (!(t instanceof HTMLElement)) {
+    return false
+  } else if (t == container) { 
+    return true;
+  } else {
+    return targetWithin(t.parentElement, container);
+  } 
+}
+
+export function isVisible(e HTMLElement) Boolean {
+  r := e.getBoundingClientRect();
+
+  return r.width > 0 || r.height > 0;
+}
+
+
+export function clearChildren(e Element) {
+  while(e.firstChild != null) {
+    e.removeChild(e.lastChild);
+  }
+}
+
+
+export function throttleEvent(callback function, interval Number) (Event) {
+  active := false;
+
+  return function(e Event) {
+    if (!active) {
+      active = true;
+
+      callback(e);
+
+      window.setTimeout(function(){active = false}, interval);
+    }
+  };
+}
+
+export function getBodyScale() Number {
+  return document.body.getBoundingClientRect().width/document.documentElement.clientWidth;
+}
+
+export function wait(ms Number) Promise<void> {
+  return new Promise(function(resolve (), reject (Error)) {
+    setTimeout(() => {
+      resolve();
+    }, ms);
+  });
+}

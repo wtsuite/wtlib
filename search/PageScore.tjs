@@ -1,11 +1,13 @@
+import {PageData} from "PageData.tjs";
+
 // each matched key is one point
 // each matched key in the title is one extra point
 export class PageScore {
-  _keys Array<String>;
-  _page Object<url: String, title: String, content: Array<String>>;
-  _keyDistance Array<Int>;
+  _keys []String;
+  _page PageData;
+  _keyDistance []Int;
 
-  constructor(keys Array<String>, page Object<url: String, title: String, content: Array<String>>) {
+  constructor(keys []String, page PageData) {
     nKeys := keys.length;
 
     // for more advanced scoring
@@ -67,7 +69,7 @@ function compareScore(a PageScore, b PageScore) Int {
 }
 
 // if filter==true: keep only the highest match counts
-export function sortPages(r Map<Int, PageScore>, filter Boolean = false) Array<Int> {
+export function sortPages(r Map<Int, PageScore>, filter Boolean = false) []Int {
   pageIDs := [];
   for (let pair of r) {
     key := pair[0];

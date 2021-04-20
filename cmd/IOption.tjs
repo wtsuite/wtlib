@@ -1,0 +1,14 @@
+import {Option} from "Option.tjs";
+
+export class IOption extends Option {
+  constructor(short String, long String, info String, callback (Int)) {
+    super(short, long, info, (arg_ String) => {
+      arg := Number.parseInt(arg_);
+      if (Number.isNaN(arg) || arg.toString() != arg_) {
+        throw new Error("value " + this.name + " not an integer");
+      }
+
+      callback(arg);
+    });
+  }
+}

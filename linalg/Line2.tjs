@@ -31,14 +31,14 @@ export class Line2 {
   }
 
   // returns [distance-to, distance-along]
-  distance2(v Vec2) Tuple<Number, Number> {
+  distance2(v Vec2) [Number, Number] {
     dx := v.x - this._v0.x;
     dy := v.y - this._v0.y;
 
     n := -this._t.y*dx + this._t.x*dy;
     t := this._t.x*dx + this._t.y*dy;
 
-    return new Tuple(n, t);
+    return [n, t];
   }
 
   // slightly faster calculations for distance-to only

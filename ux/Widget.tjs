@@ -1,0 +1,87 @@
+// generic widget which has three states:
+//  - visibility: shown/hidden
+//  - enabled: enabled/disabled
+//  - selected: selected/unselected
+export class Widget {
+  _element HTMLElement;
+
+  constructor(id String) {
+    this._element = id == "" ? null : document.getElementById(id);
+  }
+
+  get element() HTMLElement {
+    return this._element;
+  }
+
+  hide() {
+    this._element.setAttribute("hidden", "");
+  }
+
+  show() {
+    this._element.removeAttribute("hidden");
+  }
+
+  set visible(b Boolean) {
+    if (b) {
+      this.show();
+    } else {
+      this.hide();
+    }
+  }
+
+  get visible() Boolean {
+    return this._element.getAttribute("hidden") == null;
+  }
+
+  enable() {
+    this._element.removeAttribute("disabled");
+  }
+
+  disable() {
+    this._element.setAttribute("disabled", "");
+  }
+
+  set enabled(b Boolean) {
+    if (b) {
+      this.enable();
+    } else {
+      this.disable();
+    }
+  }
+
+  get enabled() Boolean {
+    return this._element.getAttribute("disabled") == null;
+  }
+
+  select() {
+    this._element.setAttribute("selected", "");
+  }
+
+  unselect() {
+    this._element.removeAttribute("selected");
+  }
+
+  set selected(s Boolean) {
+    if (s) {
+      this.select();
+    } else {
+      this.unselect();
+    }
+  }
+
+  get selected() Boolean {
+    return this._element.getAttribute("selected") != null;
+  }
+
+  toggleSelected() {
+    this.selected = !this.selected;
+  }
+
+  addEventListener(eventName String, fn (Event<any>)) {
+    this._element.addEventListener(eventName, fn);
+  }
+
+  removeAttribute(attrName String) {
+    this._element.removeAttribute(attrName);
+  }
+}

@@ -1,0 +1,449 @@
+import {SelectionMode} from "SelectionMode.tjs";
+
+enum RowState { 
+  unselected = 0, 
+  selected = 1,
+};
+
+enum ShiftState {
+  none,
+  unselected,
+  selected,
+};
+
+
+export class TableRowState {
+  _states         Uint8Array;
+  _shiftStates    Uint8Array;
+  _order          Uint32Array;
+  _active         Uint32Array;
+  _prevClickRow   Int;
+  _prevClickState RowState;
+  _count          Int;
+  _lastSort       (Int, Int) => Number; // for newly added rows
+  _lastFilter     (Int) => Boolean;
+  _selectionMode  SelectionMode;
+
+  constructor(nRows Int, selectionMode SelectionMode = SelectionMode.spreadsheet) {
+    this._states = new Uint8Array(nRows);
+    this._states.fill(RowState.unselected);
+
+    // for shift click
+    this._shiftStates = new Uint8Array(nRows);
+    this._shiftStates.fill(ShiftState.none);
+
+    this._order = new Uint32Array(nRows); // indices in data
+    this._active = null; // indices in data, non-null when some filters are active
+
+    this._prevClickRow = null;
+    this._prevClickState = null;
+
+    this._lastSort = null;
+    this._lastFilter = null;
+
+    this._selectionMode = selectionMode;
+
+    // cache the countSelected result sometimes (_count == null -> uncached)
+    this._count = null;
+
+    for (i := 0; i < nRows; i++) {
+      this._order[i] = i;
+    }
+  }
+
+  get nRows() Int {
+    return this._states.length;
+  }
+
+  get nActive() Int {
+    if (this._active != null) {
+      return this._active.length;
+    } else {
+      return this.nRows;
+    }
+  }
+
+  get selectionState() Uint8Array {
+    return this._states;
+  }
+
+  orderedRowToDataRow(i Int) Int {
+    return this._order[i];
+  }
+
+  activeRowToDataRow(i Int) Int {
+    if (this._active != null) {
+      return this._active[i];
+    } else {
+      return this.orderedRowToDataRow(i);
+    }
+  }
+
+  selected(i Int) Boolean {
+    if (this._shiftStates[i] == ShiftState.none) {
+      return this._states[i] == RowState.selected;
+    } else {
+      return this._shiftStates[i] == ShiftState.selected;
+    }
+  }
+
+  select(i Int) {
+    if (this._count != null && this._states[i] == RowState.unselected) {
+      this._count += 1;
+    }
+
+    this._states[i] = RowState.selected;
+    this._shiftStates[i] = ShiftState.none;
+  }
+
+  unselect(i Int) {
+    if (this._count != null && this._states[i] == RowState.selected) {
+      this._count -= 1;
+    }
+
+    this._states[i] = RowState.unselected;
+    this._shiftStates[i] = ShiftState.none;
+  }
+
+  toggleSelected(i Int) {
+    if (this.selected(i)) {
+      this.unselect(i);
+    } else {
+      this.select(i);
+    }
+  }
+
+  countSelected() Int {
+    if (this._count != null) {
+      return this._count;
+    } else {
+      count := 0;
+
+      for (let i = 0; i < this.nRows; i++) {
+        if (this.selected(i)) {
+          count += 1;
+        }
+      }
+
+      this._count = count;
+
+      return count;
+    }
+  }
+
+  countActiveSelected() Int {
+    if (this._active == null) {
+      return this.countSelected();
+    } else {
+      count := 0;
+
+      for (let i = 0; i < this.nActive; i++) {
+        dataRow := this.activeRowToDataRow(i);
+        if (this.selected(dataRow)) {
+          count += 1;
+        }
+      }
+
+      return count;
+    }
+  }
+
+  get allSelected() Boolean {
+    return this.countSelected() == this.nRows;
+  }
+
+  get allActiveSelected() Boolean {
+    return this.countActiveSelected() == this.nActive;
+  }
+
+  selectAll() {
+    this._count = this.nRows;
+    this._states.fill(RowState.selected);
+    this._shiftStates.fill(ShiftState.none);
+  }
+
+  selectActive() {
+    if (this.nActive == this.nRows) {
+      this.selectAll();
+    } else {
+      for (i := 0; i < this.nActive; i++) {
+        this.select(this.activeRowToDataRow(i));
+      }
+    }
+  }
+
+  selectNone() {
+    this._count = 0;
+    this._states.fill(RowState.unselected);
+    this._shiftStates.fill(ShiftState.none);
+  }
+
+  sort(comp (Int, Int) => Number) {
+    this._order.sort(comp);
+    if (this._active != null) {
+      this._active.sort(comp);
+    }
+
+    this._lastSort = comp;
+  }
+
+  filter(fn (Int) => Boolean) {
+    // use find later to retrieve the updated prevClickRow
+    prevClickDataRow := this._prevClickRow == null ? null : 
+      this.activeRowToDataRow(this._prevClickRow);
+
+    active := new Uint32Array(this.nRows);
+
+    count := 0;
+
+    for (i := 0; i < this.nRows; i++) {
+      dataRow := this.orderedRowToDataRow(i);
+
+      if (fn(dataRow)) {
+        active[count] = dataRow;
+        count++;
+      }
+    }
+
+    this._active = active.slice(0, count);
+
+    prevClickRow := this._active.findIndex(function(i Int) Boolean {
+      return prevClickDataRow == i;
+    });
+
+    if (prevClickRow == -1) {
+      this._prevClickRow = null;
+      this._prevClickState = null;
+    } else {
+      this._prevClickRow = prevClickRow;
+    }
+
+    this._lastFilter = fn;
+  }
+
+  clearFilter() {
+    if (this._active == null) {
+      return;
+    }
+
+    if (this._prevClickRow != null) {
+      prevClickDataRow := this.activeRowToDataRow(this._prevClickRow);
+
+      this._prevClickRow = this._order.findIndex(function(i Int) Boolean {
+        return prevClickDataRow == i;
+      });
+    }
+
+    this._active = null;
+    this._lastFilter = null;
+  }
+
+  clickSelect(activeRow Int, ctrl Boolean, shift Boolean) {
+    if (activeRow < 0) {
+      if (this.allActiveSelected) {
+        this.selectNone();
+      } else {
+        this.selectActive();
+      }
+    } else {
+      if (ctrl || (shift && this._prevClickRow == null) || this._selectionMode == SelectionMode.checkbox) {
+        dataRow := this.activeRowToDataRow(activeRow);
+        this.toggleSelected(dataRow);
+
+        // transfer shiftState to regular state
+
+        if (this._selectionMode != SelectionMode.checkbox) {
+          for (i := 0; i < this.nActive; i++) {
+            dataRow_ := this.activeRowToDataRow(i);
+
+            if (this._shiftStates[dataRow_] == ShiftState.unselected) {
+              this._states[dataRow_] = RowState.unselected;
+            } else if (this._shiftStates[dataRow_] == ShiftState.selected) {
+              this._states[dataRow_] = RowState.selected;
+            }
+
+            this._shiftStates[dataRow_] = ShiftState.none;
+          }
+
+          this._prevClickRow = activeRow;
+          this._prevClickState = cast(this._states[dataRow], RowState);
+        }
+      } else if (shift) {
+        start := Math.min(this._prevClickRow, activeRow);
+        stop := Math.max(this._prevClickRow, activeRow) + 1;
+
+        state := this._prevClickState == RowState.selected ? ShiftState.selected : 
+          ShiftState.unselected;
+
+        this._shiftStates.fill(ShiftState.none);
+        for (i := start; i < stop; i++) {
+          dataRow := this.activeRowToDataRow(i);
+
+          this._shiftStates[dataRow] = state;
+        }
+
+        this._count = null;
+      } else {
+        dataRow := this.activeRowToDataRow(activeRow);
+        this.selectNone();
+        this.select(dataRow);
+
+        this._prevClickRow = activeRow;
+        this._prevClickState = RowState.selected;
+      }
+    }
+  }
+
+  subsetSelected() Uint32Array {
+    n := this.countSelected();
+    indices := new Uint32Array(n);
+
+    j := 0;
+    for (let i = 0; i < this.nRows; i++) {
+      if (this.selected(i)) {
+        indices[j] = i;
+        j++;
+      }
+    }
+
+    return indices;
+  }
+
+  subsetActiveSelected() Uint32Array {
+    if (this._active == null) {
+      return this.subsetSelected();
+    } else {
+      n := this.countActiveSelected();
+      indices := new Uint32Array(n);
+
+      j := 0;
+      for (let i = 0; i < this.nActive; i++) {
+        dataRow := this.activeRowToDataRow(i);
+        if (this.selected(dataRow)) {
+          indices[j] = dataRow;
+          j++;
+        }
+      }
+
+      return indices;
+    }
+  }
+
+  subsetActive() Uint32Array {
+    if (this._active == null) {
+      return this._active;
+    } else {
+      return this._order;
+    }
+  }
+
+  addRow() {
+    nRows := this._states.length + 1;
+
+    oldStates := this._states;
+    oldShiftStates := this._shiftStates;
+    oldOrder := this._order;
+
+    this._states = new Uint8Array(nRows);
+    this._shiftStates = new Uint8Array(nRows);
+    this._order = new Uint32Array(nRows);
+    for (i := 0; i < nRows; i++) {
+      if (i < nRows - 1) {
+        this._states[i] = oldStates[i];
+        this._shiftStates[i] = oldShiftStates[i];
+        this._order[i] = oldOrder[i];
+      } else {
+        this._states[i] = RowState.unselected;
+        this._shiftStates[i] = ShiftState.none;
+        this._order[i] = oldOrder.length; // last
+      }
+    }
+
+    if (this._lastSort != null) {
+      this.sort(this._lastSort);
+    }
+
+    this._active = null;
+    if (this._lastFilter != null) {
+      this.filter(this._lastFilter);
+    }
+  }
+
+  removeRow(rowI Int) {
+    nOldRows := this._states.length;
+    nNewRows := nOldRows - 1;
+
+    oldStates := this._states;
+    oldShiftStates := this._shiftStates;
+    oldOrder := this._order;
+
+    this._states = new Uint8Array(nNewRows);
+    this._shiftStates = new Uint8Array(nNewRows);
+    this._order = new Uint32Array(nNewRows);
+    for (i := 0; i < nOldRows; i++) {
+      if (i < rowI) {
+        this._states[i] = oldStates[i];
+        this._shiftStates[i] = oldShiftStates[i];
+        this._order[i] = oldOrder[i];
+      } else if (i > rowI) {
+        this._states[i-1] = oldStates[i];
+        this._shiftStates[i-1] = oldShiftStates[i];
+        this._order[i-1] = oldOrder[i];
+      }
+    }
+
+    this._count = null;
+
+    if (this._lastSort != null) {
+      this.sort(this._lastSort);
+    }
+
+    this._active = null;
+    if (this._lastFilter != null) {
+      this.filter(this._lastFilter);
+    }
+  }
+
+  // inserts before
+  insertRow(rowI Int) {
+    nOldRows := this._states.length;
+    nNewRows := nOldRows + 1;
+
+    oldStates := this._states;
+    oldShiftStates := this._shiftStates;
+    oldOrder := this._order;
+
+    this._states = new Uint8Array(nNewRows);
+    this._shiftStates = new Uint8Array(nNewRows);
+    this._order = new Uint32Array(nNewRows);
+    for (i := 0; i < nOldRows; i++) {
+      if (i < rowI) {
+        this._states[i] = oldStates[i];
+        this._shiftStates[i] = oldShiftStates[i];
+        this._order[i] = oldOrder[i];
+      } else if (i == rowI) {
+        this._states[i] = RowState.unselected;
+        this._shiftStates[i] = ShiftState.none;
+        this._order[i] = nOldRows; // order to end for now
+
+        this._states[i+1] = oldStates[i];
+        this._shiftStates[i+1] = oldShiftStates[i];
+        this._order[i+1] = oldOrder[i];
+      } else {
+        this._states[i+1] = oldStates[i];
+        this._shiftStates[i+1] = oldShiftStates[i];
+        this._order[i+1] = oldOrder[i];
+      }
+    }
+
+    if (this._lastSort != null) {
+      this.sort(this._lastSort);
+    }
+
+    this._active = null;
+    if (this._lastFilter != null) {
+      this.filter(this._lastFilter);
+    }
+  }
+}
+

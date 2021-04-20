@@ -9,7 +9,7 @@ export class Vec3 {
     this._z = z;
   }
 
-  static fromArray(arr Array<Number>) Vec3 {
+  static fromArray(arr []Number) Vec3 {
     if (arr.length != 3) {
       throw new Error("Error: expected 3 entries");
     }

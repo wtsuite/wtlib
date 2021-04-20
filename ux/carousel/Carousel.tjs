@@ -1,13 +1,13 @@
 import {EaseInOutSine as Easing} from "easing";
 import * as linalg from "linalg";
 
-const SELECTED String = "selected";
-const RADIUS_FACTOR Number = 1.3;
-const BLUR_FACTOR Number = 0.2;
-const MAX_BLUR_RADIUS Int = 4; // the higher, the more expensive
-const MIN_SCALE Number = 0.5;
-const DISTRIBUTION_FACTOR Number = 0.5;
-const EASING_DURATION Number = 700; // ms
+const SELECTED = "selected";
+const RADIUS_FACTOR = 1.3;
+const BLUR_FACTOR = 0.2;
+const MAX_BLUR_RADIUS = 4; // the higher, the more expensive
+const MIN_SCALE = 0.5;
+const DISTRIBUTION_FACTOR = 0.5;
+const EASING_DURATION = 700.0; // ms
 
 export class Carousel {
   _container HTMLElement;
@@ -20,8 +20,8 @@ export class Carousel {
   _gutter Number; // in px, detected based on initial state
   _zRadius Number; // radius of the carousel, in px
   _distributionFactor Number;
-  _onblur function<Int, void>;
-  _onfocus function<Int, void>;
+  _onblur (Int);
+  _onfocus (Int);
   _autoRotate Boolean; // true on page load, false upon any user interaction
 
   constructor(containerID String, buttonsID String, options Object) {
@@ -87,7 +87,7 @@ export class Carousel {
     });
 
     // TODO: move this to a separate Timer class
-    var fnMove function<void> = () => {
+    const fnMove () = () => {
       if (this._autoRotate) {
         this.selectSmooth(this._selected + 1);
 
@@ -106,11 +106,11 @@ export class Carousel {
     this._autoRotate = true;
   }
 
-  set onfocus(fn function<Int, void>) {
+  set onfocus(fn (Int)) {
     this._onfocus = fn;
   }
 
-  set onblur(fn function<Int, void>) {
+  set onblur(fn (Int)) {
     this._onblur = fn;
   }
 
@@ -226,7 +226,7 @@ export class Carousel {
 
     easing := new Easing(EASING_DURATION);
     let animStart Number = null;
-    var fn function<Number, void> = (ts Number) => {
+    var fn (Number) = (ts Number) => {
       if (animStart == null) {
         animStart = ts;
       }
