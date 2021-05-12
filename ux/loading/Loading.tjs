@@ -1,6 +1,17 @@
 // delay in ms
 const DELAY Int = 100;
 
+export type Progress = () => Promise<Number>;
+
+// simply add everything
+async pollProgress(fns []Progress) Number {
+  fs := await Promise.all(fns.map((fn Progress) Promise<Number> => {return fn()}));
+
+  total := fs.reduce((acc Number, current Number) Number => {return acc + current}, 0.0);
+
+  return Math.min(total/fs.length, 1.0);
+}
+
 class Loading {
   _showPending Boolean;
   _hidePending Boolean;
@@ -39,8 +50,31 @@ class Loading {
       this._hidePending = true;
     } else {
       this.element.removeAttribute("show");
+      this.element.innerHTML = "";
       this._hidePending = false;
     }
+  }
+
+
+  // keep polling until all Progress functions are 1.0
+  progress(fns []Progress) {
+    var fnPoll () = () => {
+      pollProgress(fns).then((f Number) => {
+        this.element.innerHTML = (f*100.0).toFixed(1) + "%";
+
+        if (f < 0.99999) {
+          setTimeout(fnPoll, DELAY);
+        } else {
+          this.hide();
+        }
+      }).catch((e Error) => {
+        this.hide();
+      });
+    };
+
+    this.show();
+
+    fnPoll();
   }
 }
 

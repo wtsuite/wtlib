@@ -1,9 +1,11 @@
 export {carousel} from "carousel/carousel.thtml"
 
-export {loading, loading-style} from "loading/loading.thtml"
+export {loading} from "loading/loading.thtml"
+export {loadingStyle} from "loading/loadingStyle.thtml"
 
-export {hamburger-style} from "hamburger/hamburger.thtml"
+export {hamburgerStyle} from "hamburger/hamburgerStyle.thtml"
 
-export {modal, modalStyle} from "modal/modal.thtml"
+export {modal} from "modal/modal.thtml"
+export {modalStyle} from "modal/modalStyle.thtml"
 
 export {errorStyle} from "error/errorStyle.thtml"

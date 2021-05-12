@@ -1,0 +1,40 @@
+import {Button} from "Button.tjs";
+
+export class ImportButton extends Button {
+  _input HTMLInputElement;
+  _lastEvent Event;
+  _callback (Event, FileList);
+
+  constructor(id String, multiple Boolean = false) {
+    super(id);
+
+    this._input = document.createElement("input");
+    this._input.setAttribute("type", "file");
+    this._input.style.display = "none";
+    this._input.addEventListener("change", (e Event) => {
+      if (this.enabled && this._callback != null) {
+        this._callback(this._lastEvent, this._input.files);
+      }
+    });
+
+    if (multiple) {
+      this._input.setAttribute("multiple", "");
+    }
+
+    this._lastEvent = null;
+    this._callback = null;
+
+    document.body.appendChild(this._input);
+  }
+
+  set onclick(fn (Event, FileList)) {
+    this._callback = fn;
+
+    this._element.addEventListener("click", (e Event) => {
+      if (this.enabled) {
+        this._lastEvent = e;
+        this._input.click();
+      }
+    });
+  }
+}

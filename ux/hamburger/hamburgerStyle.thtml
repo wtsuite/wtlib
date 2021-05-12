@@ -1,6 +1,6 @@
 import * as icons from "icons"
 
-export style hamburger-style(media, size, color, hoverColor=$color, bgColor=#fff)
+export style hamburgerStyle(media, size, color, hoverColor=$color, bgColor=#fff)
   {
     float: right;
     display: none;

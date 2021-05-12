@@ -11,7 +11,7 @@ export class ExportButton extends Button {
     document.body.appendChild(this._link);
   }
 
-  set onclick(fn function) {
+  set onclick(fn (Event, (String, String))) {
     this._element.addEventListener("click", (e Event) => {
       if (this.enabled) {
         fn(e, (name String, dataURL String) => {
